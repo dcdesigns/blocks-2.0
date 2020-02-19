@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+
+
+
+<body>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<div id="canvDiv" class="unselectable" style="position:absolute; left: 0, top: 0;">
+	<canvas id="canvRotate0" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+	<canvas id="canvRotate1" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+	<canvas id="canvRotate2" style="position: absolute; left: 0; top: 0; z-index: 2;"></canvas>
+	<canvas id="canvRotate3" style="position: absolute; left: 0; top: 0; z-index: 3;"></canvas>
+	<canvas id="canv0" style="position: absolute; left: 0; top: 0; z-index: 4;"></canvas>
+	<canvas id="canv1" style="position: absolute; left: 0; top: 0; z-index: 5;"></canvas>
+	<canvas id="canv2" style="position: absolute; left: 0; top: 0; z-index: 6;"></canvas>
+	<canvas id="canv3" oncontextmenu="return false;" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>	
+</div>
+
+<script>
+
+	//define image objects
+	//make sure this matches the number of images
+	const imageCnt = 2;
+	
+	//buttons image
+	var butImg = document.createElement("img");
+	butImg.onload = function(){trackLoaders()};
+	butImg.src = 'blocks/pics/buttons.svg' + rando();
+	
+	//game squares image
+	var squareImg = document.createElement("img");
+	squareImg.onload = function(){trackLoaders()};
+	squareImg.src = 'blocks/pics/squares.png' + rando();
+	
+	//define script files
+	var scripts = [
+		'blocks/code/settings.js',
+		'blocks/code/objects.js',
+		'blocks/code/buttons.js', 
+		'blocks/code/inputs.js',
+		'blocks/code/animator.js'
+	];
+	var scriptCnt = scripts.length;
+	
+	//load scripts
+	for(var i = 0; i < scriptCnt; ++i)
+	{
+		var script = document.createElement('script');
+		script.onload = function(){trackLoaders();};
+		script.src = scripts[i] + rando();
+		document.body.appendChild(script);
+	}
+
+	//used to force image/code reload instead of what's cached
+	//todo: might be a better way of doing this that doesn't swamp the cache
+	function rando()
+	{
+		return "?" + new Date().getTime();
+	}
+	
+	//track the number of loaded objects
+	var lded = 0;
+	function trackLoaders()
+	{
+
+		console.log(++lded);
+		if(lded >= scriptCnt + imageCnt)
+		{
+			setupGame();
+		}
+	}
+	
+
+	//main entry point
+	function setupGame() 
+	{
+
+		console.log('starting');
+		setTimeout(function () 
+		{
+			squares = Math.round(squareImg.width/squareImg.height, 0);
+			//remove dead space
+			var mainDiv = document.getElementById("canvDiv");
+			mainDiv.style.left = 0 + 'px';
+			mainDiv.style.top = 0 + 'px';
+			
+			//find the zoom buttons
+			for(var x = 0; i < 2; x+=1)
+			{
+				for(var i = 0; i < butts[x].length; i+=1)
+				{
+					if(butts[x][i] === scrnBut)
+					{
+						SELECT_ZOOM_COL[x] = i;
+						break;
+					}
+				}
+			}
+			
+			
+			//create canvas array
+			for(var r = 0; r < 2; r += 1)
+			{
+				if(!r) canvStr = "canvRotate";
+				else canvStr = "canv";
+			
+				for(var i = 0; i < 4; i += 1)
+				{
+					var newCanv = document.getElementById(canvStr + i);
+					canv.push(newCanv);
+					cx.push(newCanv.getContext("2d"));
+				}
+			}
+			console.log(canv.length);
+			document.addEventListener("touchstart", startClick);
+			document.addEventListener("touchend", endClick);
+			document.addEventListener("touchmove", moveClick, {passive: false});
+
+			document.addEventListener("mousedown", startClick);
+			document.addEventListener("mousemove", moveClick);
+			document.addEventListener("mouseup", endClick);
+
+			//start looping
+			animate();
+		}, 300);
+	}
+
+</script>
+
+
+
+</body>
+
+</html> 
