@@ -1,16 +1,16 @@
-function test_inputs()
-{
-	console.log("inputs");
-}
-console.log("heeeeee");
+
 function getButtonInd()
 {
+	var ret = null;
 	if(click.end[0] > 0 && click.end[0] < scrn.w && click.end[1] > 0 && click.end[1] < scrn.h)
 	{
-		if(scrn.butX && click.end[0] > scrn.w - scrn.butX) return Math.floor((scrn.h - click.end[1])/scrn.but)
-		else if(scrn.butY && click.end[1] > scrn.h - scrn.butY) return Math.floor(click.end[0]/scrn.but);
+		//buttons are vertical: check if x is in the button range
+		if(scrn.butX && click.end[0] > scrn.w - scrn.butX) ret = Math.floor((scrn.h - click.end[1])/scrn.but)
+		
+		//buttons are horizontal: check if y is in the button range
+		else if(scrn.butY && click.end[1] > scrn.h - scrn.butY) ret = Math.floor(click.end[0]/scrn.but);
 	}
-	return null;
+	return ret;
 }
 
 function getGridXY()
@@ -19,111 +19,121 @@ function getGridXY()
 
 function setActiveButton(isStart)
 {
-	if(!isStart)
-	{
-		//ignore if target is active
-		if(click.act === SELECT_MOVE) return false;
+
+	var temp_ind = getButtonInd();
 	
-		//ignore if zooming is active
-		if(click.act === SELECT_ZOOM) return true;
-	}
-	
-	click.but = getButtonInd();
-	if(click.but === null) return false;
-	else if(isStart)
+	if(isStart || (!mobile && click.act === null))
 	{
-		if(click.but === SELECT_ZOOM_COL[paused])
+		if(temp_ind === null)
+		{
+			if(click.act === null)
+			{
+				//console.log("target start");
+				click.act = SELECT_MOVE;
+			}
+		}
+		else if(temp_ind === SELECT_ZOOM_COL[paused])
 		{
 			click.act = SELECT_ZOOM;
-			//window.scrollTo(0, 0);
-			reConfigure();
+			click.but = temp_ind;
 		}	
 		else
 		{
 			click.act = SELECT_BUT;
-		}		
+			click.but = temp_ind;
+		}
 	}
-	return true;
-}
-
-function setActiveTarget(isStart)
-{
-	if(isStart) click.act = SELECT_MOVE;
 	
-	//ignore if target was not set at start
-	if(click.act !== SELECT_MOVE) return false;
-	
-	click.del[0] = null;
-	//find the target angle and quantized angle
-	click.theta = Math.atan2(click.end[1]-click.start[1], click.end[0]-click.start[0]);
-	if(click.theta < 0) click.theta += Math.PI * 2;
-	click.sect = Math.floor((click.theta + Math.PI /8)/(Math.PI/4))%8;
-	click.thetaQ = click.sect * Math.PI/4;
-	
-	//find the scale of the move
-	click.dist = distance(click.end, click.start);
-	click.scl = -1;
-	if(click.dist < targCircT) click.scl = 0;
-	else if(click.dist < targInT) click.scl = 1;	
-	else if(click.dist < targOutT) click.scl = 2;
-	click.dist = Math.min(JOY_MAX, click.dist);
-	
-	//calculate move delta (if valid target)
-	if(click.scl > -1)
+	if(click.act == SELECT_MOVE)
 	{
-		var cos = Math.cos(click.sect * Math.PI/4);
-		var xSgn = (cos > 0)? 1: -1;
-		var sin = Math.sin(click.sect * Math.PI/4);
-		var ySgn = (sin > 0)? 1: -1;
-		click.del[0] = ((Math.abs(cos) > .7)? click.scl: 0) * xSgn;
-		click.del[1] = ((Math.abs(sin) > .7)? click.scl: 0) * ySgn;
-
+		setActiveTarget();
 	}
+	else if(click.act == SELECT_BUT)
+	{
+		click.but = temp_ind;
+	}
+
+}
+ 
+
+
+ 
+ function setActiveTarget()
+{	
+	//ignore if target was not set at start
+	if(player.state != IDLE || click.act !== SELECT_MOVE) return false;
+	
+	click.delta[0] = null;
+	//console.log(flipped);
+	var adjX, adjY;
+	if(flipped == 1)
+	{
+		adjX = scrn.h - (!buttsFlipped? scrn.but : 0) - click.end[1] - scrn.sy;
+		adjY = click.end[0] - scrn.sx; 
+	}
+	else if(flipped == -1)
+	{
+		adjX = click.end[1] - scrn.sy;
+		adjY = scrn.w - (buttsFlipped? scrn.but : 0) - click.end[0] - scrn.sx; 
+	}
+	else
+	{
+		adjX = click.end[0] - scrn.sx;
+		adjY = click.end[1] - scrn.sy;
+	}
+	click.delta[0] = Math.floor((adjX) / scrn.sq) - player.pos[0];
+	click.delta[1] = Math.floor((adjY) / scrn.sq) - player.pos[1];
+	//console.log("pos " , player.pos, ", delta " ,click.delta);
+	if(!validDelta(click.delta) || !onBoard(player.pos, click.delta))
+	{
+		click.delta[0] = null;
+	}
+
 }
 
 
 function startClick(e)
 {
-	console.log("start tart");
 	//check for mobile vs computer
 	mobile = e.type.indexOf('touch') > -1;
 	
 	//set XY
-	click.start = getStandardXY(e);
+	click.start = getDisplayXY(e);
 	click.end = click.start;
 	
-	if(!setActiveButton(true)) setActiveTarget(true);
+	setActiveButton(true);
 	
 }
 
 function moveClick(e)
-{
-	//get rid of scroll bars on pc
-	/* if(mobile && e.type === 'mousemove')
-	{
-		mobile = false;
-		reConfigure();
-	} */
+{	
+	//check for mobile vs computer
+	mobile = e.type.indexOf('touch') > -1;
+	
+	//console.log("move");
 	
 	//prevent default action if we're not zooming
 	if(click.act !== SELECT_ZOOM) e.preventDefault();
 	
-	if(click.act === null) return;
+	if(!mobile && (click.start[0] == -1 && (click.act == SELECT_BUT || click.act == SELECT_MOVE || click.act == SELECT_ZOOM)))
+	{
+		click.act = null;
+	}
+	//if(click.act === null) return;
 	
-	click.end = getStandardXY(e);
-	if(!setActiveButton(false)) setActiveTarget(false);
+	click.end = getDisplayXY(e);
+	setActiveButton(false);
 }
 
 function endClick(e)
 {
-	//zoom: toggle fullscreen (doesn't work on all platforms) 
+	//zoom: toggle fullscreen (doesn't work on all platforms... looking at you ios) 
 	if(click.act === SELECT_ZOOM)
 	{
-		fullS = !fullS;
-		var elem = document.documentElement;
-		
 		if(!ios)
 		{
+			fullS = !fullS;
+			var elem = document.documentElement;
 			if(fullS)
 			{
 			 
@@ -156,19 +166,22 @@ function endClick(e)
 	}
 	
 	//targets
-	else if(click.act === SELECT_MOVE && click.del[0] !== null) //&& not dead and moves left and blah blah
+	else if(click.act === SELECT_MOVE && click.delta[0] !== null && player.state == IDLE && !outOfMoves()) //&& not dead and moves left and blah blah
 	{
-		player.pos = vectorAdd(player.pos, click.del);
+		player.history.push(vectorCopy(player.pos));
+		player.lastMatchPos = vectorCopy(player.pos);
+		player.target = click.delta;
+		startJump();
 	}
 	
-	console.log('resetiing');
 	//reset place holders/action status
 	click.but = null;
-	click.del = [null, null];
+	click.delta = [null, null];
+	click.start = [-1,-1];
 	click.act = null;
 }
 
-function getStandardXY(e)
+function getDisplayXY(e)
 {
 	var XY = [];
 	
@@ -186,64 +199,18 @@ function getStandardXY(e)
 	return XY;
 }
 	
-/* function updateClick(e)
+function setSquareAction()
 {
-	//click.end = getXY(e);
-	click.but = [null, null];
-	click.del = [null, null];
-		
-	//zoom (keep it highlighted regardless of position)
-	if(click.act === SELECT_ZOOM)
+	if(onBoard(player.pos))
 	{
-		click.but[1] = SELECT_BUT;
-		click.but[0] = SELECT_ZOOM_COL[paused];
+		console.log("here, ", player.pos);
+		console.log(level.squares[player.pos[1]][player.pos[0]]);
+		level.squares[player.pos[1]][player.pos[0]].act();
+	}
+	else
+	{
+		player.jumping = false;
+		player.nowMillis = 0;
 	}
 	
-	//buttons 
-	else if(click.act === SELECT_BUT)
-	{
-		if(click.end[1] >= (scrn.maj - scrn.but))
-		{
-			click.but[1] = SELECT_BUT;
-			click.but[0] = Math.floor(click.end[0]/scrn.but);
-
-			if(click.but[0] === SELECT_ZOOM_COL[paused] || butts[paused][click.but[0]].ignore)
-			{
-				click.but[0] = null;
-			}
-		}
-	}
-	
-	//targets 
-	else if(click.act === SELECT_MOVE)
-	{
-		click.del[0] = null;
-		//find the target angle and quantized angle
-		click.theta = Math.atan2(click.end[1]-click.start[1], click.end[0]-click.start[0]);
-		if(click.theta < 0) click.theta += Math.PI * 2;
-		click.sect = Math.floor((click.theta + Math.PI /8)/(Math.PI/4))%8;
-		click.thetaQ = click.sect * Math.PI/4;
-		
-		//find the scale of the move
-		click.dist = distance(click.end, click.start);
-		click.scl = -1;
-		if(click.dist < targCircT) click.scl = 0;
-		else if(click.dist < targInT) click.scl = 1;	
-		else if(click.dist < targOutT) click.scl = 2;
-		click.dist = Math.min(JOY_MAX, click.dist);
-		
-		//calculate move delta (if valid target)
-		if(click.scl > -1)
-		{
-			var cos = Math.cos(click.sect * Math.PI/4);
-			var xSgn = (cos > 0)? 1: -1;
-			var sin = Math.sin(click.sect * Math.PI/4);
-			var ySgn = (sin > 0)? 1: -1;
-			click.del[0] = ((Math.abs(cos) > .7)? click.scl: 0) * xSgn;
-			click.del[1] = ((Math.abs(sin) > .7)? click.scl: 0) * ySgn;
-
-		}
-	}
-} */
-
-
+}

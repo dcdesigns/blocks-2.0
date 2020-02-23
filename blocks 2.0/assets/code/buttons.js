@@ -1,10 +1,3 @@
-console.log('butttts');
-
-function test_buttons()
-{
-	console.log("buttons ", t_ind);
-}
-
 
 
 var t_ind = 0;
@@ -64,7 +57,16 @@ var restartBut = {
 	imgInd: t_ind++,
 	ignore: false,
 	action: function(){
-		//loadLevel(false);
+		killAll();
+		player.state = IDLE;
+		gameOver = false;
+		
+		if(player.history.length)
+		{
+			player.pos = player.history[0];
+			player.history = [];
+			player.lastMatchPos = vectorCopy(player.pos);
+		}
 	}
 };
 
@@ -73,7 +75,15 @@ var undoBut = {
 	imgInd: t_ind++,
 	ignore: false,
 	action: function(){
-		//undo
+		
+		killAll();
+		player.state = IDLE;
+		gameOver = false;
+		if(player.history.length)
+		{
+			player.pos = player.history.pop();
+			player.lastMatchPos = vectorCopy(player.pos);
+		}
 	}
 };
 
@@ -117,8 +127,8 @@ var userBut = {
 
  //screen buttons
 var butts = [
-	[scrnButNotFull, menuBut, restartBut, undoBut, movesBut],
-	[scrnButNotFull, menuBut, prevBut, nextBut, userBut]
+	[scrnButNotFull, restartBut, undoBut, menuBut, movesBut],
+	[scrnButNotFull, prevBut, nextBut, menuBut, userBut]
 ];
 
 

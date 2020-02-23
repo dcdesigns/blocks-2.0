@@ -19,86 +19,112 @@
 
 <script>
 
-	//define image objects
-	//make sure this matches the number of images
-	const imageCnt = 2;
 	
-	//buttons image
-	var butImg = document.createElement("img");
-	butImg.onload = function(){trackLoaders()};
-	butImg.src = 'blocks/pics/buttons.svg' + rando();
+
+	var butImg, squareImg, playerImg, numbersImg;
+	var butSrcs =  [
+		['blocks/pics/buttons.svg', "butImg"], 
+		['blocks/pics/squares.svg', "squareImg"],
+		['blocks/pics/player.svg', "playerImg"],
+		['blocks/pics/numbers.svg', "numbersImg"]
+	];
 	
-	//game squares image
-	var squareImg = document.createElement("img");
-	squareImg.onload = function(){trackLoaders()};
-	squareImg.src = 'blocks/pics/squares.png' + rando();
+
 	
 	//define script files
 	var scripts = [
+		"https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js",
 		'blocks/code/helpers.js',
 		'blocks/code/settings.js',
 		'blocks/code/objects.js',
+		'blocks/code/squares.js',
+		'blocks/code/levels.js',
 		'blocks/code/buttons.js', 
 		'blocks/code/inputs.js',
 		'blocks/code/animator.js'
 	];
-	var scriptCnt = scripts.length;
 	
-	//load scripts
-	for(var i = 0; i < scriptCnt; ++i)
-	{
-		var script = document.createElement('script');
-		script.onload = function(){trackLoaders();};
-		script.src = scripts[i] + rando();
-		document.body.appendChild(script);
-	}
-
+	//load all scripts and images
+	var imageCnt = butSrcs.length;
+	var scriptCnt = scripts.length;
+	var loaded = 0;
+	var toLoad = imageCnt + scriptCnt;
+	var canv = [];
+	var cx = [];
+	
+	
 	//used to force image/code reload instead of what's cached
 	//todo: might be a better way of doing this that doesn't swamp the cache
 	function rando()
 	{
 		return "?" + new Date().getTime();
 	}
-	
-	//track the number of loaded objects
-	var lded = 0;
-	function trackLoaders()
-	{
 
-		console.log(++lded);
-		if(lded >= scriptCnt + imageCnt)
+	
+	function loadScripts(ind)
+	{
+		if(ind < scriptCnt)
 		{
-			setupGame();
+			var script = document.createElement('script');
+			script.onload = function(){loadScripts(ind + 1);};
+			script.src = scripts[ind] + rando();
+			document.body.appendChild(script);
+		}
+		if(ind > 0)
+		{
+			++loaded;
+			console.log(loaded);
+			if(ind == 1)
+			{
+				WebFont.load(
+				{
+					google: {
+						families: ['Roboto:900']
+					},
+					loading: function() {
+						console.log("Fonts are being loaded");
+					},
+					active: function() {
+						console.log("Fonts have been rendered")
+					}
+				});
+			}
 		}
 	}
 	
+	function loadImages(ind)
+	{
+		
+		if(ind < imageCnt)
+		{
+			for ( var v in window ) 
+			{
+				if(v == butSrcs[ind][1]) 
+				{
+					window[butSrcs[ind][1]] = document.createElement("img");
+					window[butSrcs[ind][1]].onload = function(){loadImages(ind + 1)};
+					window[butSrcs[ind][1]].src = butSrcs[ind][0] + rando();
+					break;
+				}
+			}
+		}
+		if(ind > 0) ++loaded;
+	}
+
+			
 
 	//main entry point
-	function setupGame() 
+	function startLoading() 
 	{
-
-		console.log('starting');
+		loadImages(0);
+		loadScripts(0);
+		
 		setTimeout(function () 
 		{
-			squares = Math.round(squareImg.width/squareImg.height, 0);
 			//remove dead space
 			var mainDiv = document.getElementById("canvDiv");
 			mainDiv.style.left = 0 + 'px';
 			mainDiv.style.top = 0 + 'px';
-			
-			//find the zoom buttons
-			for(var x = 0; i < 2; x+=1)
-			{
-				for(var i = 0; i < butts[x].length; i+=1)
-				{
-					if(butts[x][i] === scrnBut)
-					{
-						SELECT_ZOOM_COL[x] = i;
-						break;
-					}
-				}
-			}
-			
 			
 			//create canvas array
 			for(var r = 0; r < 2; r += 1)
@@ -113,20 +139,133 @@
 					cx.push(newCanv.getContext("2d"));
 				}
 			}
-			console.log(canv.length);
-			document.addEventListener("touchstart", startClick);
-			document.addEventListener("touchend", endClick);
-			document.addEventListener("touchmove", moveClick, {passive: false});
-
-			document.addEventListener("mousedown", startClick);
-			document.addEventListener("mousemove", moveClick);
-			document.addEventListener("mouseup", endClick);
-
-			//start looping
-			animate();
+			
+			//start the loading animation
+			animateLoading();
+			
 		}, 300);
 	}
+	
+	//draws a loading status bar
+	function animateLoading(w, h, r_w, r_h)
+	{
+		var w = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
+		var h = (window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight);
+		if(canv[0].width != w) canv[0].width = w;
+		if(canv[0].height != h) canv[0].height = h;
+		
+		var r_h = Math.min(200, h - 2 * 50);
+		var r_w = Math.min(800, w - 2 * 50);
+		
+		//draw loading bar
+		cx[0].fillStyle = 'black';
+		cx[0].fillRect(0, 0, w, h);
+		cx[0].fillStyle = 'gray';
+		cx[0].fillRect((w - r_w)/2, (h - r_h)/2, r_w, r_h);
+		cx[0].fillStyle = 'RGB(25,124,247)'
+		cx[0].fillRect((w - r_w)/2, (h - r_h)/2, r_w * loaded/toLoad, r_h);
+	
+		//next loop
+		if(loaded < toLoad)
+		{
+			requestAnimationFrame(animateLoading);
+		}
+		else
+		{
+			//finished loading: start the game
+			startGame();
+		}
+	}
+	
+	//gets the game going once everything's loaded
+	function startGame()
+	{
+		console.log('starting');
+		
+		player.img = playerImg;
+		
+		//find the placement of the zoom buttons
+		for(var x = 0; x < 2; x+=1)
+		{
+			for(var i = 0; i < butts[x].length; i+=1)
+			{
+				switch(butts[x][i])
+				{
+					case scrnButNotFull:
+						SELECT_ZOOM_COL[x] = i;
+						break;
+					case movesBut:
+						MOVES_DISPLAY = i;
+						break;
+					case undoBut:
+						UNDO_IND = i;
+						break;
+					case restartBut:
+						RESTART_IND = i;
+						break;
+				}
+			}
+		}
+		
 
+		//set up input listeners
+		document.addEventListener("touchstart", startClick);
+		document.addEventListener("touchend", endClick);
+		document.addEventListener("touchmove", moveClick, {passive: false});
+
+		document.addEventListener("mousedown", startClick);
+		document.addEventListener("mousemove", moveClick);
+		document.addEventListener("mouseup", endClick);
+		
+		document.addEventListener('keydown', function(event) 
+		{
+			switch(event.keyCode)
+			{
+				case 78:
+					gameOver = false;
+					nextLevel();
+					break;
+				case 80:
+					level.index = Math.max(-1, level.index - 2);
+					gameOver = false;
+					nextLevel();
+					break;
+				case 82:
+					restartBut.action();
+					break;
+				case 90:
+					undoBut.action();
+					break;
+			}
+			
+		});
+		
+		window.addEventListener("orientationchange", function() 
+		{
+			rotating = true;
+			setTimeout(function()
+			{
+				rotating = false;
+				landscapeLast = 10000;
+				portraitLast = 10000;
+			}, 1200);
+			
+		}, false);
+		
+		level.index = firstLevel - 1;
+		
+		//load the first level
+		nextLevel();
+		
+		//start the game loop
+		animate();
+		
+	}
+	
+	//initiate loading/starting the game
+	startLoading();
+	
+	
 </script>
 
 
