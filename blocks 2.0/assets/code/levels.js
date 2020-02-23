@@ -44,12 +44,21 @@ var GAME_LEVELS = [
 	
 	//first ice
 	{map: [
+		"LILLLLLLLIX",
+		"GLIIIIIIGLI",
+		"LILLLLLLGLL"
+	],
+	player: [0,1],
+	moves: 3},
+	
+	
+	{map: [
 		"XLLL",
 		"LILL",
 		"LLLL",
 		"LLLG",
 		"LIIL",
-		"LLLL",
+		"GLLL",
 		"GGLL",
 		"LILL",
 		"LILL",
@@ -90,7 +99,17 @@ var GAME_LEVELS = [
 	player: [1,1],
 	moves: 6}, 
 	
-	
+	{map: [
+		"LLLLLGLL",
+		"LLLLLLLL",
+		"GGT|IIIG",
+		"LLLLLLLG",
+		"LLLLLILL",
+		"LLLLLLI|",
+		"LLLLLLLX"
+	],
+	player: [1,2],
+	moves: 4},
 	
 	{map: [
 		"LLLLLLLL",
@@ -106,30 +125,11 @@ var GAME_LEVELS = [
 	//first hor tramp
 	{map: [
 		"LLLLL-LGL-L-L-",
-		"GG-LG-IL-L-LLL",
+		"G|-LG-IL-L-LLL",
 		"LLLLL-L-L-L-LX"
 	],
 	player: [0, 1],
 	moves: 3},
-	
-	{map: [
-		"IXIIIIPIII",
-		"LLLLLLLLLL",
-		"IPIIIIIII|"
-	],
-	player: [0,2],
-	moves: 1},
-	
-	{map: [
-		"XLPLLLLLL",
-		"LLGGTPI|L",
-		"LLLLLLLLL"
-	],
-	player: [3,1],
-	moves: 2},
-	
-	
-	
 	
 	{map: [
 		"GIIL-LLLLLL",
@@ -141,10 +141,27 @@ var GAME_LEVELS = [
 	moves: 4},
 	
 	{map: [
+		"IXIIIIPIII",
+		"LLLLLLLLLL",
+		"IPIIIIIII|"
+	],
+	player: [0,2],
+	moves: 1},
+	
+	{map: [
+		"/LPLLLXLL",
+		"|LGGTPI|L",
+		"RL-LIG/LL"
+	],
+	player: [3,1],
+	moves: 3},
+	
+	
+	{map: [
 		"-L-L-RLLLLL",
 		"L/-RL-LGLLL",
 		"||G||-IIIIX",
-		"LR-/L-LILLL",
+		"LR-/L-LTLLL",
 		"-L-L-LLLGLL"
 	],
 	player: [2,2],

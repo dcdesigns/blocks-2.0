@@ -58,6 +58,7 @@ var player = {
 	theta: 0,
 	omega: 0,
 	alpha: 1, 
+	spinDir: 1,
 	
 	
 	
@@ -131,7 +132,7 @@ function updatePlayer(elapsed)
 	{
 		killSpin();
 	} */
-	player.theta += elapsed * player.omega;
+	player.theta += elapsed * player.omega * player.spinDir;
 	
 	//update fade
 	player.opacity *= player.opacity_rate;
@@ -225,6 +226,7 @@ function killAll()
 	killXY();
 	killZ();
 	killSpin();
+	//player.alpha = .6;
 	killFade();
 	player.theta = 0;
 
@@ -240,6 +242,7 @@ function startSpin()
 {
 	player.omega = omega_init;
 	player.alpha = 1;
+	player.spinDir = -player.spinDir;
 }
 
 function slowSpin()

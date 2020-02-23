@@ -48,7 +48,7 @@ const z_min = -30;//-playerJumpHeight/playerScaleTopJump;
 //constant rotation speed
 const omega_init = 2 * Math.PI * playerMoveRotation / playerMillis;
 //constant set to kill omega in one cycle
-const alpha_slow = .95; 
+const alpha_slow = .97; 
 //constant set to disappear in one cycle
 const opacity_rate_init = .95;
 

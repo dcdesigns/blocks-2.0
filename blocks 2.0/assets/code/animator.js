@@ -42,21 +42,7 @@ function drawBase()
 		}
 	}
 	
-	cx[FRONT].font = (scrn.but * .2) + 'px Roboto';
-	cx[FRONT].textAlign = 'center';
-	cx[FRONT].textBaseline = 'top';
-	cx[FRONT].fillStyle = 'rgb(135,135,135)';
 	
-	//horizontal buttons
-	if(!buttsFlipped)
-	{
-		cx[FRONT].fillText("LEVEL " + (level.index + 1), scrn.but * (MOVES_DISPLAY + .5), scrn.h - scrn.but + scrn.but * .1);	
-	}
-	//vertical buttons
-	else
-	{
-		cx[FRONT].fillText("LEVEL " + (level.index + 1),  scrn.w - (.5 * scrn.but), scrn.h - scrn.but * (MOVES_DISPLAY + .9));
-	}
 	
 	
 	
@@ -436,60 +422,84 @@ function animate()
 
 	}
 	
-	if([FALLING, BURNING, DEAD].includes(player.state) || (!([ACTIVE, WINNING].includes(player.state)) && outOfMoves()))
+	if(!paused)
 	{
-		if(deadLast == false)
-		{
-			flashingPhase = 0;
-			
-		}
-		else
-		{
-			flashingPhase += elapsed;
-		}
+		cx[BUT_CANV].font = (scrn.but * .2) + 'px Roboto';
+		cx[BUT_CANV].textAlign = 'center';
+		cx[BUT_CANV].textBaseline = 'top';
+		cx[BUT_CANV].fillStyle = 'rgb(135,135,135)';
 		
-		//console.log("dead");
-		cx[BUT_CANV].fillStyle = 'RGB(25,124,247)';;//'rgb(111,0,41)';
-		var reduc = scrn.but * .1;
-		var newSz = scrn.but -2 * reduc;
-		cx[BUT_CANV].globalAlpha = .7 * Math.abs(Math.sin( 2 * Math.PI * flashingPhase/flashMillis));
+		//horizontal buttons
 		if(!buttsFlipped)
 		{
-			cx[BUT_CANV].fillRect(scrn.but * UNDO_IND + reduc, scrn.h - scrn.but + reduc, scrn.but -2 * reduc, newSz);
-			cx[BUT_CANV].fillRect(scrn.but * RESTART_IND + reduc, scrn.h - scrn.but + reduc, scrn.but -2 * reduc, newSz);
+			cx[BUT_CANV].fillText("LEVEL " + (level.index + 1), scrn.but * (MOVES_DISPLAY + .5), scrn.h - scrn.but + scrn.but * .1);	
+		}
+		//vertical buttons
+		else
+		{
+			cx[BUT_CANV].fillText("LEVEL " + (level.index + 1),  scrn.w - (.5 * scrn.but), scrn.h - scrn.but * (MOVES_DISPLAY + .9));
+		}
+		
+		
+		if([FALLING, BURNING, DEAD].includes(player.state) || (!([ACTIVE, WINNING].includes(player.state)) && outOfMoves()))
+		{
+			if(deadLast == false)
+			{
+				flashingPhase = 0;
+				
+			}
+			else
+			{
+				flashingPhase += elapsed;
+			}
+			
+			//console.log("dead");
+			cx[BUT_CANV].fillStyle = 'RGB(25,124,247)';;//'rgb(111,0,41)';
+			var reduc = scrn.but * .1;
+			var newSz = scrn.but -2 * reduc;
+			cx[BUT_CANV].globalAlpha = .7 * Math.abs(Math.sin( 2 * Math.PI * flashingPhase/flashMillis));
+			if(!buttsFlipped)
+			{
+				cx[BUT_CANV].fillRect(scrn.but * UNDO_IND + reduc, scrn.h - scrn.but + reduc, scrn.but -2 * reduc, newSz);
+				cx[BUT_CANV].fillRect(scrn.but * RESTART_IND + reduc, scrn.h - scrn.but + reduc, scrn.but -2 * reduc, newSz);
+			}
+			else
+			{
+				cx[BUT_CANV].fillRect(scrn.w - scrn.but + reduc, scrn.h - scrn.but * (UNDO_IND + 1) + reduc, newSz, newSz);
+				cx[BUT_CANV].fillRect(scrn.w - scrn.but + reduc, scrn.h - scrn.but * (RESTART_IND + 1) + reduc, newSz, newSz);
+			}
+			
+			deadLast = true;
+			cx[BUT_CANV].globalAlpha = 1;
 		}
 		else
 		{
-			cx[BUT_CANV].fillRect(scrn.w - scrn.but + reduc, scrn.h - scrn.but * (UNDO_IND + 1) + reduc, newSz, newSz);
-			cx[BUT_CANV].fillRect(scrn.w - scrn.but + reduc, scrn.h - scrn.but * (RESTART_IND + 1) + reduc, newSz, newSz);
+			deadLast = false;
 		}
-		cx[BUT_CANV].globalAlpha = 1;
-		deadLast = true;
+		
+		//highlight targets
+		if(player.state == IDLE && !outOfMoves()) // && click.delta[0] !== null)
+		{
+			drawTarget();
+		}
+		
+		//draw moves counter
+		var numberInd = level.moves - player.history.length;
+		if(player.state !== ACTIVE)
+		{
+			if(player.state == WINNING) numberInd = 10;
+			else if([BURNING, FALLING].includes(player.state)) numberInd = 11;
+		}
+		//player
+		updatePlayer(elapsed);
+		//console.log(player.opacity, player.theta, player.omega, player.state);
+		drawPlayer(elapsed);
 	}
-	else
-	{
-		deadLast = false;
-	}
-	
-	//highlight targets
-	if(player.state == IDLE && !outOfMoves()) // && click.delta[0] !== null)
-	{
-		drawTarget();
-	}
-	
-	//draw moves counter
-	var numberInd = level.moves - player.history.length;
-	if(player.state !== ACTIVE)
-	{
-		if(player.state == WINNING) numberInd = 10;
-		else if([BURNING, FALLING].includes(player.state)) numberInd = 11;
-	}
-	
-	
 	
 	//horizontal buttons
 	if(!buttsFlipped)
 	{
+		
 		
 		cx[BUT_CANV].drawImage(numbersImg, numberInd * numbersImg.height, 0, numbersImg.height, numbersImg.height,
 			scrn.but * MOVES_DISPLAY, scrn.h - scrn.but, scrn.but, scrn.but);
@@ -504,10 +514,7 @@ function animate()
 	}
 	
 	
-	//player
-	updatePlayer(elapsed);
-	//console.log(player.opacity, player.theta, player.omega, player.state);
-	drawPlayer(elapsed);
+	
 	
 	//next loop
 	requestAnimationFrame(animate);
@@ -556,6 +563,8 @@ function nextLevel()
 	level.drawn = false;
 	player.goalLoops = 0;
 	console.log("made the level: ", level.size, level.squares[0].length, level.squares.length);
+	
+	lastTime = new Date();
 	return true;
 }
 

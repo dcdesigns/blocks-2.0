@@ -31,6 +31,7 @@ var Ice = {
 	{
 		console.log("ice");
 		player.jumping = false;
+		slowSpin();
 	}
 };
 
