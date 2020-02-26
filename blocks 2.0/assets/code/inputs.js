@@ -1,14 +1,53 @@
 
+
+function keyEvent(event) 
+{
+	switch(event.keyCode)
+	{
+		case 78:
+			gameOver = false;
+			nextLevel();
+			break;
+		case 80:
+			level.index = Math.max(-1, level.index - 2);
+			gameOver = false;
+			nextLevel();
+			break;
+		case 82:
+			restartBut.action();
+			break;
+		case 90:
+			undoBut.action();
+			break;
+	}
+	
+};
+
+function screenFlip() 
+{
+	rotating = true;
+	setTimeout(function()
+	{
+		rotating = false;
+		landscapeLast = 10000;
+		portraitLast = 10000;
+	}, 1200);
+	
+};
+
+
 function getButtonInd()
 {
 	var ret = null;
 	if(click.end[0] > 0 && click.end[0] < scrn.w && click.end[1] > 0 && click.end[1] < scrn.h)
 	{
 		//buttons are vertical: check if x is in the button range
-		if(scrn.butX && click.end[0] > scrn.w - scrn.butX) ret = Math.floor((scrn.h - click.end[1])/scrn.but)
+		if(scrn.butX && click.end[0] > scrn.w - scrn.butX) ret = Math.floor((scrn.h - scrn.butOff - click.end[1])/scrn.but)
 		
 		//buttons are horizontal: check if y is in the button range
-		else if(scrn.butY && click.end[1] > scrn.h - scrn.butY) ret = Math.floor(click.end[0]/scrn.but);
+		else if(scrn.butY && click.end[1] > scrn.h - scrn.butY) ret = Math.floor((click.end[0] - scrn.butOff)/scrn.but);
+		
+		if(ret < 0 || ret > butts[paused].length -1) ret = null;
 	}
 	return ret;
 }
@@ -61,7 +100,7 @@ function setActiveButton(isStart)
  function setActiveTarget()
 {	
 	//ignore if target was not set at start
-	if(player.state != IDLE || click.act !== SELECT_MOVE) return false;
+	if(player.state != IDLE || click.act !== SELECT_MOVE || paused) return false;
 	
 	click.delta[0] = null;
 	//console.log(flipped);
@@ -109,17 +148,15 @@ function moveClick(e)
 {	
 	//check for mobile vs computer
 	mobile = e.type.indexOf('touch') > -1;
-	
-	//console.log("move");
-	
+
 	//prevent default action if we're not zooming
 	if(click.act !== SELECT_ZOOM) e.preventDefault();
 	
+	//reset highlighting of mouseover square when not clicked
 	if(!mobile && (click.start[0] == -1 && (click.act == SELECT_BUT || click.act == SELECT_MOVE || click.act == SELECT_ZOOM)))
 	{
 		click.act = null;
 	}
-	//if(click.act === null) return;
 	
 	click.end = getDisplayXY(e);
 	setActiveButton(false);
@@ -199,18 +236,4 @@ function getDisplayXY(e)
 	return XY;
 }
 	
-function setSquareAction()
-{
-	if(onBoard(player.pos))
-	{
-		console.log("here, ", player.pos);
-		console.log(level.squares[player.pos[1]][player.pos[0]]);
-		level.squares[player.pos[1]][player.pos[0]].act();
-	}
-	else
-	{
-		player.jumping = false;
-		player.nowMillis = 0;
-	}
-	
-}
+

@@ -19,7 +19,28 @@
 
 <script>
 
-	
+	//enums
+	const BACK = 0;
+	const BASE = 1;
+	const BUT_SEL_CANV = 2;
+	const MID = 3;
+	const BUT_CANV = 4;
+
+	const CLICK_START = 0;
+	const CLICK_MOVE = 1;
+	const CLICK_END = 2;
+
+	const SELECT_BUT = -1;
+	const SELECT_ZOOM = 2; 
+	const SELECT_MOVE = 3;
+
+	const ACTIVE = 4;
+	const IDLE = 5;
+	const BURNING = 6
+	const FALLING = 7;
+	const DEAD = 8;
+	const WINNING = 9;
+	const FINISHED = 10;
 
 	var butImg, squareImg, playerImg, numbersImg;
 	var butSrcs =  [
@@ -81,12 +102,12 @@
 					google: {
 						families: ['Roboto:900']
 					},
-					loading: function() {
+					/* loading: function() {
 						console.log("Fonts are being loaded");
 					},
 					active: function() {
 						console.log("Fonts have been rendered")
-					}
+					} */
 				});
 			}
 		}
@@ -158,12 +179,12 @@
 		var r_w = Math.min(800, w - 2 * 50);
 		
 		//draw loading bar
-		cx[0].fillStyle = 'black';
-		cx[0].fillRect(0, 0, w, h);
-		cx[0].fillStyle = 'gray';
-		cx[0].fillRect((w - r_w)/2, (h - r_h)/2, r_w, r_h);
-		cx[0].fillStyle = 'RGB(25,124,247)'
-		cx[0].fillRect((w - r_w)/2, (h - r_h)/2, r_w * loaded/toLoad, r_h);
+		cx[BACK].fillStyle = 'black';
+		cx[BACK].fillRect(0, 0, w, h);
+		cx[BACK].fillStyle = 'gray';
+		cx[BACK].fillRect((w - r_w)/2, (h - r_h)/2, r_w, r_h);
+		cx[BACK].fillStyle = 'RGB(25,124,247)'
+		cx[BACK].fillRect((w - r_w)/2, (h - r_h)/2, r_w * loaded/toLoad, r_h);
 	
 		//next loop
 		if(loaded < toLoad)
@@ -209,52 +230,30 @@
 		
 
 		//set up input listeners
+		//touch
 		document.addEventListener("touchstart", startClick);
 		document.addEventListener("touchend", endClick);
 		document.addEventListener("touchmove", moveClick, {passive: false});
-
+		
+		//mouse
 		document.addEventListener("mousedown", startClick);
 		document.addEventListener("mousemove", moveClick);
 		document.addEventListener("mouseup", endClick);
 		
-		document.addEventListener('keydown', function(event) 
-		{
-			switch(event.keyCode)
-			{
-				case 78:
-					gameOver = false;
-					nextLevel();
-					break;
-				case 80:
-					level.index = Math.max(-1, level.index - 2);
-					gameOver = false;
-					nextLevel();
-					break;
-				case 82:
-					restartBut.action();
-					break;
-				case 90:
-					undoBut.action();
-					break;
-			}
-			
-		});
+		//keys
+		document.addEventListener('keydown', keyEvent);
+
+		//screen rotate
+		window.addEventListener("orientationchange", screenFlip);
 		
-		window.addEventListener("orientationchange", function() 
-		{
-			rotating = true;
-			setTimeout(function()
-			{
-				rotating = false;
-				landscapeLast = 10000;
-				portraitLast = 10000;
-			}, 1200);
-			
-		}, false);
 		
-		level.index = firstLevel - 1;
 		
 		//load the first level
+		level.index = firstLevel - 1;
+		if(loadLast)
+		{
+			level.index = GAME_LEVELS.length - 2;
+		}
 		nextLevel();
 		
 		//start the game loop

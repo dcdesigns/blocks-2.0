@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html>
+
+
+
+<body>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+<div id="canvDiv" class="unselectable" style="position:absolute; left: 0, top: 0;">
+	<canvas id="canv0" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+	<canvas id="canv1" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+	<canvas id="canv2" style="position: absolute; left: 0; top: 0; z-index: 2;"></canvas>
+	<canvas id="canv3" style="position: absolute; left: 0; top: 0; z-index: 3;"></canvas>
+	<canvas id="canv4" oncontextmenu="return false;" style="position: absolute; left: 0; top: 0; z-index: 4;"></canvas>	
+</div>
+<div id="toolDiv" class="unselectable" style="position:absolute; left: 0, top: 0;">
+	grid:  <select id="numXbut" oninput = "gridChange();"> </select> x <select id="numYbut" oninput = "gridChange();"> </select>
+	moves limit <input type="number" id="moves" min="1" max="20" value = "1">
+	<button type="button" id= "save" onclick = "add_level(0);" >add_save</button>
+	<button type="button" id= "save_replace" onclick = "add_level(1);" >overwrite_save</button>
+</div>
+
+
+
+<script>
+
+	const buttonHt = 50;
+	const border = 20;
+	const extra = 3;
+
+	//enums
+	const BACK = 0;
+	const MID_SELECT = 1;
+	const MID = 2;
+	const FRONT_SELECT = 3
+	const FRONT = 4;
+	
+	const canv_cnt = FRONT + 1;
+	
+	const DEFAULT = 1;
+	const GRID_SQUARE = 2;
+	const GRID_SELECT = 3;
+	
+	const CLICK_START = 0;
+	const CLICK_MOVE = 1;
+	const CLICK_END = 2;
+
+	var popup = {
+		act: null,
+		but: 25,
+		gap: 5,
+		left: 0, 
+		top: 0,
+		ind: null,
+		xy: [0,0],
+		select: {start: [0,0], end: [0,0], clicked: [0,0]},
+	};
+	
+	var selection = {
+	};
+	
+	var scrn = {};
+	var squareImg, playerImg;
+	var butSrcs =  [
+		['blocks/pics/squares.svg', "squareImg"],
+		['blocks/pics/player.svg', "playerImg"],
+	];
+	
+
+	
+	//define script files
+	var scripts = [
+		"https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js",
+		'blocks/code/settings.js',
+		'blocks/code/squares.js',
+		'blocks/code/levels.js',
+	];
+	
+	//load all scripts and images
+	var imageCnt = butSrcs.length;
+	var scriptCnt = scripts.length;
+	var loaded = 0;
+	var toLoad = imageCnt + scriptCnt;
+	var canv = [];
+	var cx = [];
+	var squares = [];
+	var squareLetters = [];
+	var grid = [];
+	var player = [0,0];
+	var numX = 5;
+	var numY = 5;
+	var maxX = 20;
+	var maxY = 20;
+	var numXbut = document.getElementById("numXbut");
+	var numYbut = document.getElementById("numYbut");
+	var defaultSqInd = 0;
+	var moves = document.getElementById("moves");
+	var startedWith = 0;
+	numXbut.options.length = 0;
+	numYbut.options.length = 0;
+
+	
+	for(var i = 1; i <= maxX; i +=1)
+	{
+		var opt = document.createElement('option');
+		opt.value = i;
+		opt.innerHTML = opt.value;
+		numXbut.appendChild(opt);
+	}
+	numXbut.value = numX;
+	
+	
+	for(var i = 1; i < maxY; i +=1)
+	{
+		var opt = document.createElement('option');
+		opt.value = i;
+		opt.innerHTML = opt.value;
+		numYbut.appendChild(opt);
+	}
+	numYbut.value = numY;
+	
+	//used to force image/code reload instead of what's cached
+	//todo: might be a better way of doing this that doesn't swamp the cache
+	function rando()
+	{
+		return "?" + new Date().getTime();
+	}
+
+	
+	function loadScripts(ind)
+	{
+		if(ind < scriptCnt)
+		{
+			var script = document.createElement('script');
+			script.onload = function(){loadScripts(ind + 1);};
+			script.src = scripts[ind] + rando();
+			document.body.appendChild(script);
+		}
+		if(ind > 0)
+		{
+			++loaded;
+			console.log(loaded);
+			if(ind == 1)
+			{
+				WebFont.load(
+				{
+					google: {
+						families: ['Roboto:900']
+					},
+					/* loading: function() {
+						console.log("Fonts are being loaded");
+					},
+					active: function() {
+						console.log("Fonts have been rendered")
+					} */
+				});
+			}
+		}
+	}
+	
+	function loadImages(ind)
+	{
+		
+		if(ind < imageCnt)
+		{
+			for ( var v in window ) 
+			{
+				if(v == butSrcs[ind][1]) 
+				{
+					window[butSrcs[ind][1]] = document.createElement("img");
+					window[butSrcs[ind][1]].onload = function(){loadImages(ind + 1)};
+					window[butSrcs[ind][1]].src = butSrcs[ind][0] + rando();
+					break;
+				}
+			}
+		}
+		if(ind > 0) ++loaded;
+	}
+
+			
+
+	//main entry point
+	function startLoading() 
+	{
+		loadImages(0);
+		loadScripts(0);
+		
+		setTimeout(function () 
+		{
+			//remove dead space
+			var mainDiv = document.getElementById("canvDiv");
+			mainDiv.style.left = 0 + 'px';
+			mainDiv.style.top = 0 + 'px';
+			
+			
+			
+			//create canvas array
+			for(var i = 0; i < canv_cnt; i += 1)
+			{
+				var newCanv = document.getElementById("canv" + i);
+				canv.push(newCanv);
+				cx.push(newCanv.getContext("2d"));
+			}
+			
+			//start the loading animation
+			animateLoading();
+			
+		}, 300);
+	}
+	
+	//draws a loading status bar
+	function animateLoading(w, h, r_w, r_h)
+	{
+		var w = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
+		var h = (window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight);
+		if(canv[0].width != w) canv[0].width = w;
+		if(canv[0].height != h) canv[0].height = h;
+		
+		var r_h = Math.min(200, h - 2 * 50);
+		var r_w = Math.min(800, w - 2 * 50);
+		
+		//draw loading bar
+		cx[BACK].fillStyle = 'black';
+		cx[BACK].fillRect(0, 0, w, h);
+		cx[BACK].fillStyle = 'gray';
+		cx[BACK].fillRect((w - r_w)/2, (h - r_h)/2, r_w, r_h);
+		cx[BACK].fillStyle = 'RGB(25,124,247)'
+		cx[BACK].fillRect((w - r_w)/2, (h - r_h)/2, r_w * loaded/toLoad, r_h);
+	
+		//next loop
+		if(loaded < toLoad)
+		{
+			requestAnimationFrame(animateLoading);
+		}
+		else
+		{
+			startDesigning();
+		}
+	}
+	
+	//gets the desinging going once everything's loaded
+	function startDesigning()
+	{
+		console.log('starting');
+		startedWith = GAME_LEVELS.length;
+		var ind = 0;
+		defaultSqInd = 0;
+		for(var attr in sqCodes)
+		{
+			squareLetters.push(attr);
+			squares.push(sqCodes[attr]);
+			ind += 1;
+		}
+		
+		grid = [];
+		for(var x = 0; x <= maxX; x += 1)
+		{
+			var col = []
+			for(var y = 0; y <= maxY; y += 1)
+			{
+				col.push(0);
+			}
+			grid.push(col);
+		}
+		//console.log(grid);
+
+		//set up input listeners
+		//mouse
+		document.addEventListener("mousedown", startClick);
+		document.addEventListener("mousemove", moveClick);
+		document.addEventListener("mouseup", endClick);
+		
+		//keys
+		document.addEventListener('keydown', keyEvent);
+		
+		window.addEventListener('resize', gridChange);
+		
+		gridChange();
+
+	}
+	
+	//initiate loading/starting the game
+	startLoading();
+	
+	function setPopup(e)
+	{
+		
+		popup.gap = 5;
+		var numSq = squares.length + 1;
+		popup.width = numSq * (popup.but) + (numSq + 1) * popup.gap;
+		popup.height = popup.but + 2 * popup.gap;
+		popup.left = e.clientX - popup.width/2;
+		popup.top = e.clientY - popup.height/2;
+		
+		if(popup.left + popup.width > scrn.w - 20)
+		{
+			popup.left = scrn.w - popup.width - 20;
+		}
+		if(popup.left - popup.width < 20)
+		{
+			popup.left = 20;
+		}
+		if(popup.top + popup.height > scrn.h - 20)
+		{
+			popup.top = scrn.h - popup.height - 20;
+		}
+		if(popup.top < 20)
+		{
+			popup.top = 20;
+		}
+	}
+	
+	function updatePop(e)
+	{
+		popup.xy = [e.clientX, e.clientY];
+		
+		
+		cx[FRONT_SELECT].clearRect(0,0, scrn.w, scrn.h);
+		cx[FRONT_SELECT].fillStyle = 'black';
+		cx[FRONT_SELECT].fillRect(popup.left, popup.top, popup.width, popup.height);
+		cx[FRONT_SELECT].fillStyle = 'white';
+		popup.ind = Math.floor((popup.xy[0] - (popup.left + popup.gap/2))/(popup.but + popup.gap));
+		//console.log(popup.ind, popup.xy[0], popup.left, popup.gap, popup.but);
+		
+		if(popup.ind >= 0 && popup.ind <= squares.length &&
+			popup.xy[1] >= popup.top && popup.xy[1] <= popup.top + popup.height)
+		{
+			cx[FRONT_SELECT].fillRect(popup.left + popup.ind * (popup.but + popup.gap), popup.top, popup.but + 2 * popup.gap, popup.but + 2 * popup.gap);
+		}
+		else
+		{
+			popup.ind = null;
+		}
+	}
+	
+	function xy_limits(ind_start, ind_end)
+	{
+		var xmin = ind_start[0];
+		var xmax = ind_end[0];
+		var ymin = ind_start[1];
+		var ymax = ind_end[1];
+		
+		if(ind_end[0] < ind_start[0])
+		{
+			var temp = xmin;
+			xmin = xmax;
+			xmax = temp;
+		}
+		if(ind_end[1] < ind_start[1])
+		{
+			var temp = ymin;
+			ymin = ymax;
+			ymax = temp;
+		}
+		return [xmin, xmax, ymin, ymax];
+	}
+	
+	function updateSelect(e = null)
+	{
+		if(e !== null) popup.select.end = getSelectInd(e);
+		
+		
+		cx[MID_SELECT].clearRect(0,0,scrn.w, scrn.h);
+		cx[MID_SELECT].fillStyle = 'white';
+		
+		var limits = xy_limits(popup.select.start, popup.select.end);
+		for(var x = limits[0]; x <= limits[1]; x += 1)
+		{
+			for(var y = limits[2]; y <= limits[3]; y += 1)
+			{
+				cx[MID_SELECT].fillRect(scrn.sx + scrn.sq * x - extra, scrn.sy + scrn.sq * y - extra, scrn.sq + 2*extra, scrn.sq + 2* extra);
+				
+			}
+		}
+	}
+	
+	function getSelectInd(e)
+	{
+		var x = Math.floor((e.clientX - scrn.sx) / scrn.sq);
+		var y = Math.floor((e.clientY - scrn.sy) / scrn.sq);
+		
+		x = Math.min(Math.max(0, x), numX - 1);
+		y = Math.min(Math.max(0, y), numY - 1);
+		
+		return [x, y];
+	}
+	
+	function ind_in_selected(ind)
+	{
+		limits = xy_limits(popup.select.start, popup.select.end);
+		if(ind[0] < limits[0] || ind[0] > limits[1] || ind[1] < limits[2] || ind[1] > limits[3])
+		{
+			return false;
+		}
+		return true;
+	}
+		
+	function startClick(e)
+	{
+		console.log(e.button);
+		
+		if(e.clientY < scrn.sy)
+		{
+			//popup.act = DEFAULT;
+		}
+		else if(e.button == 2)
+		{
+			popup.act = GRID_SQUARE;
+			var ind = getSelectInd(e);
+			popup.select.clicked = ind;
+			if(!ind_in_selected(ind))
+			{
+				popup.select.start = ind;
+				popup.select.end = ind;
+				updateSelect();
+			}
+		}
+		else
+		{
+			popup.act = GRID_SELECT;
+		}
+		
+		if(popup.act == DEFAULT || popup.act == GRID_SQUARE)
+		{
+			cx[FRONT].clearRect(0,0, scrn.w, scrn.h);
+			setPopup(e);
+			
+			for(var i = 0; i < squares.length; i += 1)
+			{
+				cx[FRONT].drawImage(squareImg, (squares[i].imgInd) * squareImg.height + scrn.sqBuffer, scrn.sqBuffer, squareImg.height - 2* scrn.sqBuffer, squareImg.height - 2*scrn.sqBuffer,
+				popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + popup.gap, popup.but, popup.but);
+			}
+			
+			cx[FRONT].drawImage(playerImg, 0, 0, playerImg.height, playerImg.height,
+				popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + popup.gap, popup.but, popup.but);
+			
+			updatePop(e);
+		}
+		else if(popup.act = GRID_SELECT)
+		{
+			popup.select.start = getSelectInd(e);
+			updateSelect(e);
+		}
+			
+			
+	}
+	
+	function moveClick(e)
+	{
+		if(popup.act == null) return
+		
+		if(popup.act == DEFAULT || popup.act == GRID_SQUARE) updatePop(e);
+		if(popup.act == GRID_SELECT) updateSelect(e);
+		
+	}
+	
+	function endClick(e)
+	{
+		if(popup.act == DEFAULT && popup.ind !== null && popup.ind < squares.length)
+		{
+			/* defaultSquare = squares[popup.ind];
+			console.log("default", defaultSquare, popup.ind);
+			gridChange(); */
+		}
+		else if(popup.act == GRID_SQUARE && popup.ind !== null)
+		{
+			if(popup.ind < squares.length)
+			{
+				limits = xy_limits(popup.select.start, popup.select.end);
+				for(var x = limits[0]; x <= limits[1]; x += 1)
+				{
+					for(var y = limits[2]; y <= limits[3]; y += 1)
+					{
+						grid[x][y] = popup.ind;
+						
+					}
+				}
+			}
+			else
+			{
+				player = [popup.select.clicked[0], popup.select.clicked[1]];
+			}
+			gridChange();
+		}
+
+		cx[FRONT].clearRect(0,0, scrn.w, scrn.h);
+		cx[FRONT_SELECT].clearRect(0,0, scrn.w, scrn.h);
+		popup.act = null;
+	}
+	
+	function keyEvent(event) 
+	{
+		switch(event.keyCode)
+		{
+			case 78:
+				gameOver = false;
+				nextLevel();
+				break;
+			case 80:
+				level.index = Math.max(-1, level.index - 2);
+				gameOver = false;
+				nextLevel();
+				break;
+			case 82:
+				restartBut.action();
+				break;
+			case 90:
+				undoBut.action();
+				break;
+		}
+		
+	};
+	
+function drawSquare(ind_x, ind_y, imgInd, img = squareImg)
+{
+	//cx[MID].clearRect(scrn.sx + ind_x * (scrn.sq), scrn.sy + ind_y * (scrn.sq), scrn.sq, scrn.sq);
+	cx[MID].drawImage(img, (imgInd) * img.height + scrn.sqBuffer, scrn.sqBuffer, img.height - 2* scrn.sqBuffer, img.height - 2*scrn.sqBuffer,
+		scrn.sx + scrn.sqOff + ind_x * (scrn.sq), scrn.sy + scrn.sqOff + ind_y * (scrn.sq), scrn.sqReduc, scrn.sqReduc);
+}
+	
+function gridChange()
+{
+	document.body.style.overflow = 'hidden';
+	
+	numX = numXbut.value;
+	numY = numYbut.value;
+
+
+	//get new sizing
+	scrn.l = (window.pageXOffset || document.documentElement.scrollLeft);
+	scrn.w = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
+	scrn.h= (window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight);
+	scrn.sq = Math.min(maxButton, Math.min((scrn.w - 2 * border) / numX, (scrn.h - buttonHt - 2 * border) / numY));
+	scrn.sqBuffer = sqBuffer * squareImg.height;
+	scrn.sqReduc = scrn.sq * (1-bordPct);
+	scrn.sqOff = scrn.sq * bordPct/2;
+	scrn.h -= buttonHt;
+	var toolDiv = document.getElementById("toolDiv");
+	toolDiv.style.left = 0 + 'px';
+	toolDiv.style.top = (scrn.h + 10) + 'px';
+	
+	
+	
+	scrn.sx = (scrn.w - numX * scrn.sq) /2;
+	scrn.sy = (scrn.h - numY * scrn.sq) /2;
+
+	//resize/translate/rotate canvases 
+	for(var i = 0; i < canv.length; i += 1)
+	{
+		canv[i].width = scrn.w;
+		canv[i].height = scrn.h;
+		
+		cx[i].resetTransform();
+		cx[i].save();	
+	}
+
+	
+	cx[BACK].fillStyle = 'black';
+	cx[BACK].fillRect(0,0,scrn.w, scrn.h);
+	cx[MID].clearRect(0,0,scrn.w, scrn.h);
+	cx[FRONT].clearRect(0,0,scrn.w, scrn.h);
+	
+	cx[MID].fillStyle = 'white';
+	for(var x = 0; x < numX; x += 1)
+	{
+		for(var y = 0; y < numY; y += 1)
+		{
+			var imgInd = squares[grid[x][y]].imgInd;
+			drawSquare(x, y, imgInd);
+		}
+	}
+	console.log(player);
+	drawSquare(player[0], player[1], 0, playerImg);
+	updateSelect();
+}
+
+	
+function levels_to_text()
+{
+	var out_str = "\n\nvar GAME_LEVELS = [\n"
+
+	for(var i = 0; i < GAME_LEVELS.length; i += 1)
+	{
+		
+		out_str += "\t{\n\t\tmap: [\n";
+		for(var y = 0; y < GAME_LEVELS[i].map.length; y += 1)
+		{
+			out_str += '\t\t\t"' + GAME_LEVELS[i].map[y] + '"';
+			if(y < GAME_LEVELS[i].map.length - 1)
+			{
+				out_str += ',';
+			}
+			out_str += '\n';
+		}
+		out_str += '\t\t],\n';
+		out_str += "\t\tplayer: [" + GAME_LEVELS[i].player + "],\n";
+		out_str += "\t\tmoves: " + GAME_LEVELS[i].moves + "\n";
+		out_str += "\t},\n\n";
+	}
+	out_str += "];\n";
+	
+	return (out_str);
+}
+
+
+function add_level(overwrite)
+{
+
+	if(overwrite && GAME_LEVELS.length > startedWith)
+	{
+		GAME_LEVELS.pop();
+	}
+	
+	var new_level = {};
+	new_level.map = [];
+	for(var y = 0; y < numY; y += 1)
+	{
+		var str = ""
+		for(var x = 0; x < numX; x += 1)
+		{
+			var letter = squareLetters[defaultSqInd];
+			if(grid[x][y] !== null) letter = squareLetters[grid[x][y]];
+			str += letter;
+		}
+		new_level.map.push(str);
+		console.log(str);
+	}
+	new_level.player = [player[0], player[1]];
+	new_level.moves = Number(moves.value);
+	GAME_LEVELS.push(new_level);
+	
+	var WEBSOCKET_ROUTE = '/DesignerWS';
+	var ws = null;
+	if(window.location.protocol == "http:")
+	{
+		//localhost
+		ws = new WebSocket("ws://" + window.location.host + WEBSOCKET_ROUTE);
+	}
+	else if(window.location.protocol == "https:")
+	{
+		//Dataplicity
+		ws = new WebSocket("wss://" + window.location.host + WEBSOCKET_ROUTE);
+	}
+
+
+	ws.onopen = function(evt) 
+	{
+	   console.log('opened');
+	   ws.send(levels_to_text());
+	};
+
+	ws.onclose = function(evt)
+	{
+		console.log('closed');
+	};	
+	
+	ws.onmessage = function(evt) 
+	{
+		console.log(evt.data);
+		ws.close();
+	} 
+}
+	
+	
+</script>
+
+
+
+</body>
+
+</html> 

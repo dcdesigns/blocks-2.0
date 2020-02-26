@@ -27,32 +27,108 @@ var scrn = {
 	sqOff: 0,
 	butX: 0,
 	butY: 0,
+	butOff: 0,
 	sx: 0,
 	sy: 0,
 	tx: 0,
-	ty: 0
+	ty: 0,
+	targetR: 1
 }
+
+
+//level
+var level = {
+	drawn: false,
+	index: -1,
+	size: [],
+	playerStart: [],
+	moves: 0,
+	squares: []
+}
+
+function nextLevel() 
+{
+	if (level.index >= GAME_LEVELS.length - 1) 
+	{
+		alert("you win");
+		gameOver = true;
+		return;
+	}
+	
+	click.act = null;
+	killXY();
+	//killAll();
+
+	level.index += 1;
+	
+	
+	var curLevel = GAME_LEVELS[level.index];
+	level.size = [curLevel.map[0].length, curLevel.map.length];
+	level.moves = curLevel.moves;
+	player.movesLeft = level.moves;
+	player.history = [];
+	level.playerStart = vectorCopy(curLevel.player);
+	player.pos = vectorCopy(curLevel.player);
+	player.lastMatchPos = vectorCopy(curLevel.player);
+	
+	if([BURNING, FALLING, DEAD].includes(player.state))
+	{
+		player.state = IDLE;
+		killAll();
+	}
+	
+	//get the level map
+	level.squares = [];
+	level.portals = [];
+	level.animators = [];
+	
+	for(var y = 0; y < level.size[1]; y += 1) 
+	{
+		var row = [];
+		for(var x = 0; x < level.size[0]; x += 1)
+		{
+			var square = sqCodes[curLevel.map[y][x]];
+			row.push(square);
+			if(square == Portal) level.portals.push([x, y]);
+			
+			
+			if(square.animate !== null)
+			{
+				console.log("anim", square.animate);
+				level.animators.push({ind_x: x, ind_y: y, time: 0, ind: square.animate.minInd, animate: square.animate});
+				
+			}
+		}
+		level.squares.push(row);
+	}
+	console.log(level.animators);
+	level.drawn = false;
+	player.goalLoops = 0;
+	console.log("made the level: ", level.size, level.squares[0].length, level.squares.length);
+	
+	lastTime = new Date();
+	return true;
+}
+
 
 
 //player object
 var player = {
 	img: null,
 	state: IDLE,
-	history: [],
-	
 	
 	//xy motion
 	pos: [2,3],
 	vel: [0,0],
 	target: [0,0], //probably not necessary once changes are in place
 	lastMatchPos: [2,3],
+	history: [],	
 	
 	//z motion (jump/fall)
 	z: 0,
 	z_vel: 0,
-	
+	accel: z_accel,
 	jumping: false, //probably not necessary once changes are in place
-	
 	
 	//rotation
 	theta: 0,
@@ -60,25 +136,12 @@ var player = {
 	alpha: 1, 
 	spinDir: 1,
 	
-	
-	
-	spinning: false, //probably not necessary once changes are in place
-	
 	//fading
 	opacity: 1,
 	opacity_rate: 1,
 	
-	
 	//winning
 	goalLoops: 0,
-	
-	
-	//probably not necessary once changes are in place
-	moveMillis: playerMillis,
-	nowMillis: 0,
-	
-	
-	
 	
 }
 
@@ -96,19 +159,20 @@ var click = {
 	sect: 0
 };
 
-//level
-var level = {
-	drawn: false,
-	index: -1,
-	size: [],
-	playerStart: [],
-	moves: 0,
-	squares: []
+
+function setSquareAction()
+{
+	if(onBoard(player.pos))
+	{
+		level.squares[player.pos[1]][player.pos[0]].act();
+	}
+	else
+	{
+		player.jumping = false;
+	}
+	
 }
 
-var pos = [0,0];
-var act = null;
-var squares = 0;
 
 function updatePlayer(elapsed)
 {
@@ -117,47 +181,60 @@ function updatePlayer(elapsed)
 	player.pos[1] += elapsed * player.vel[1];
 	
 	var on_board = onBoard();
-	if(!on_board) console.log("off");
+	if(!on_board && player.state !== FALLING)
+	{
+		player.state = FALLING;
+		startFade();
+	}
 	
 	//update z
-	player.z_vel += elapsed * z_accel;
+	player.z_vel += elapsed * player.accel;
 	player.z += elapsed * player.z_vel;
+	//console.log(player.z);
 	if(player.state !== FALLING) player.z = Math.max(0, player.z);
-	else player.z = Math.max(z_min, player.z);
-	
+	else
+	{
+		player.z = Math.max(z_min, player.z);
+	}
 	//update angle
 	var start_omega = player.omega;
 	player.omega *= player.alpha;
-	/* if(player.omega < 0) 
-	{
-		killSpin();
-	} */
 	player.theta += elapsed * player.omega * player.spinDir;
 	
 	//update fade
 	player.opacity *= player.opacity_rate;
-	//player.opacity = Math.max(0, player.opacity);
+
+	//top of winning jump: load next level
+	if(player.state == WINNING && !gameOver && player.z >= playerLoadHeight)
+	{
+		player.state = ACTIVE;
+		player.accel = load_z_accel * 4;
+		nextLevel();
+	}
 	
 	//check for landing on a square
 	if([ACTIVE, WINNING].includes(player.state) && player.z == 0)
 	{
+		//reset accel in case winning was active
+		player.accel = z_accel;
+		
+		//see how far we've moved from the last known square
 		dist = absVector(vectorSubtract(player.pos, player.lastMatchPos));
-		console.log("maybe landed");
+	
+		//landed from a jump or slid to a new square
 		if(player.jumping || dist[0] >= 1 || dist[1] >= 1)
 		{
-			console.log("landed");
 			player.pos = roundVector(player.pos);
-			//player.jumping = false;
 			if(on_board)
 			{
 				setSquareAction();
 				player.lastMatchPos = vectorCopy(player.pos);
 			}
-			else
+			/* else
 			{
 				player.state = FALLING;
 				startFade();
-			}
+			} */
 		}
 	}
 }
@@ -168,12 +245,9 @@ function updatePlayer(elapsed)
  {
 	var newPos = vectorAdd(pos, delta);
 	var ret = false;
-	
-	
-	
+
 	if((newPos[0] > -boardBuffer) && (newPos[0] < level.size[0] - 1 + boardBuffer) && (newPos[1] > -boardBuffer) && newPos[1] < (level.size[1] - 1 + boardBuffer))
 	{
-		//console.log(-boardBuffer, level.size[0] + boardBuffer, level.size[1] + boardBuffer, newPos[0], newPos[1]);
 		ret = true;
 	}
 	return ret;
@@ -190,13 +264,21 @@ function outOfMoves()
 	return player.history.length >= level.moves;
 }
 
+function playerIdle()
+{
+	return player.state == IDLE && !outOfMoves();
+}
+
+function failed()
+{
+	return [FALLING, BURNING, DEAD].includes(player.state) || (outOfMoves() && !([ACTIVE, WINNING].includes(player.state)));
+}
+
 
 function killXY()
 {
 	player.vel = zeroVector();
 	player.target = zeroVector();
-	
-	
 }
 
 function killZ()
@@ -208,10 +290,8 @@ function killZ()
 
 function killSpin()
 {
-	//player.theta = 0;
 	player.omega = 0;
 	player.alpha = 1;
-	player.spinning = false;
 }
 
 function killFade()
@@ -226,10 +306,8 @@ function killAll()
 	killXY();
 	killZ();
 	killSpin();
-	//player.alpha = .6;
 	killFade();
 	player.theta = 0;
-
 	player.state = IDLE;
 }
 
@@ -245,9 +323,9 @@ function startSpin()
 	player.spinDir = -player.spinDir;
 }
 
-function slowSpin()
+function slowSpin(alpha = alpha_slow)
 {
-	player.alpha = alpha_slow;
+	player.alpha = alpha;
 }
 
 function startJump(jumpVel = z_vel_init)
@@ -261,17 +339,5 @@ function startJump(jumpVel = z_vel_init)
 	if(jumpVel < z_vel_init_goal) player.state = ACTIVE;
 }
 
-function limitZ()
-{
-	if(player.z < 0 && onBoard())
-	{
-		killZ();
-	}
-}
 
-/* function startXY()
-{
-	player.vel[0] += player.target[0] / playerMillis;
-	player.vel[1] += player.target[0] / playerMillis;
-} */
 

@@ -51,7 +51,6 @@ function vectorNonZero(v)
 function vectorAdd(v1, v2)
 {
 	var vsum = [];
-	//console.log("add: ", v1, v2);
 	for(i = 0; i < v1.length; i += 1)
 	{
 		vsum.push(v1[i] + v2[i]);
@@ -62,7 +61,6 @@ function vectorAdd(v1, v2)
 function vectorSubtract(v1, v2)
 {
 	var vres = [];
-	//console.log("add: ", v1, v2);
 	for(i = 0; i < v1.length; i += 1)
 	{
 		vres.push(v1[i] - v2[i]);

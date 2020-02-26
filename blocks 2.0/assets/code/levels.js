@@ -1,25 +1,8 @@
 
 
-var sqCodes = {
-	"G": Grass,
-	"X": Goal,
-	"L": Lava,
-	"I": Ice,
-	"B": Boost,
-	"T": TrampReg,
-	"-": TrampHor,
-	"|": TrampVrt,
-	"R": TrampDDn,
-	"/": TrampDUp,
-	"O": TrampSpin, 
-	"P": Portal,
-};
-
-
-
 var GAME_LEVELS = [
 	
- 	{map: [
+	{map: [
 			"LLLL",
 			"GGGX",
 			"LLLL"
@@ -165,6 +148,16 @@ var GAME_LEVELS = [
 		"-L-L-LLLGLL"
 	],
 	player: [2,2],
+	moves: 3},
+	
+	{map: [
+		"LLLGLLL",
+		"LLLLLLL",
+		"GIIWIIX",
+		"LLIIILL",
+		"LLLGLLL"
+	],
+	player: [3,4],
 	moves: 3}
 	
 	

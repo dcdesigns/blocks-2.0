@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+
+
+
+<body>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+<div id="canvDiv" class="unselectable" style="position:absolute; left: 0, top: 0;">
+	<canvas id="canvBase" oncontextmenu="return false;" style="position: absolute; left: 0; top: 0; z-index: 3;"></canvas>	
+	<canvas id="canv" oncontextmenu="return false;" style="position: absolute; left: 0; top: 0; z-index: 4;"></canvas>	
+</div>
+
+
+
+
+<script>
+
+	const squareSize = 50;
+	const squareDepth =100;
+	const halfSize = squareSize/2;
+	const centerDepth = 4000;
+	const millisPerRotate = 10000;
+	const jumpMillis = 1000;
+	const jumpHeight = 300;
+	
+	const blockSize = 75;
+	const blockDepth = 200;
+	const blockSpace = 30;
+	const blocksX = 8;
+	const blocksY = 7;
+	
+	const r1 = squareDepth/centerDepth;
+	const r2 = 1 - r1;
+	const Pi_4 = Math.PI/4;
+	const Pi3_4 = 3 * Pi_4;
+	const Pi5_4 = 5 * Pi_4;
+	const Pi7_4 = 7 * Pi_4;
+	const Pi_2 = Math.PI/2;
+	const Pi3_2 = Pi_2 * 3;
+	
+	const radius = halfSize/(Math.sin(Pi_4));
+	console.log(radius, Pi_4, halfSize);
+	
+	const blockR1 = blockDepth/centerDepth;
+	const blockR2 = 1 - blockR1;
+	const blockRadius = blockSize/2/(Math.sin(Pi_4));
+	
+	var cX, cY, pX, pY, w, h, lastTime;
+	
+	var canv, cx;
+	var theta = 0;
+	var height  = 0;
+	var thetaJump = 0;
+	const thetaPerMilli = 2 * Math.PI / millisPerRotate;
+	const thetaJumpPerMilli = 2 * Math.PI/ jumpMillis;
+	
+	const colorA = 'rgb(57,57,57)';
+	const colorB = 'rgb(40, 40, 40)';
+	
+	//main entry point
+	function startLoading() 
+	{
+
+		setTimeout(function () 
+		{
+			//remove dead space
+			var mainDiv = document.getElementById("canvDiv");
+			mainDiv.style.left = 0 + 'px';
+			mainDiv.style.top = 0 + 'px';
+			
+			
+			
+			canv = document.getElementById("canv");
+			cx = canv.getContext("2d");
+			
+			canvBase = document.getElementById("canvBase");
+			cxBase = canvBase.getContext("2d");
+				
+			w = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
+			h = (window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight);
+			
+			canv.width = w;
+			canv.height = h;
+			canvBase.width = w;
+			canvBase.height = h;
+			
+			cX = w/2;
+			cY = h/2;
+			
+			pX = cX;
+			pY = cY;
+			
+			document.addEventListener("mousemove", moveClick);
+			document.addEventListener("touchmove", moveClick, {passive: false});
+			document.addEventListener("touchstart", moveClick, {passive: false});
+			
+			cxBase.fillStyle = 'black';
+			cxBase.fillRect(0,0, w, h);
+			
+			const offX = Math.floor(blocksX / 2);
+			const offY = Math.floor(blocksY / 2);
+			
+			var sorted = [];
+			var dists = [];
+			for(var x = -offX; x <= offX; x += 1)
+			{
+				for(var y = -offY; y <= offY; y += 1)
+				{
+					var xDist = (blockSize + blockSpace) * x;
+					var yDist = (blockSize + blockSpace) * y;
+					var dist = Math.pow(Math.pow(xDist, 2) + Math.pow(yDist, 2), .5);
+
+					var i;
+					for(i = 0; i < dists.length; i += 1)
+					{
+						if(dist > dists[i]) break;
+					}
+					sorted.splice(i, 0, [xDist, yDist]);
+					dists.splice(i, 0, dist);
+				}
+			}
+			for(var i = 0; i < sorted.length; i += 1)
+			{
+				draw3DSquare([cX + sorted[i][0], cY + sorted[i][1]], centerDepth, 0, blockRadius, blockR2, blockR1,  false, 'green');
+			}
+			
+			//start the loading animation
+			lastTime = new Date().getTime();
+			
+			animate();
+			
+		}, 300);
+	}
+	
+	
+	function moveClick(e)
+	{
+		var mobile = e.type.indexOf('touch') > -1;
+		if(mobile)
+		{
+			pX = e.touches[e.touches.length -1].clientX;
+			pY = e.touches[e.touches.length -1].clientY;
+			e.preventDefault();
+		}
+		else
+		{
+			pX = e.clientX;
+			pY = e.clientY;
+		}
+		
+	}
+
+	//scale a value based on an object's height
+	function adjust(height, value)
+	{
+		if(height <= 0) return 0;
+		
+		return value * height/centerDepth;
+	}
+	
+	//gets the distance from a midpoint of two points to the focus center
+	function middleToCenter(pA, pB)
+	{
+		return Math.pow(Math.pow((pA[0] + pB[0])/2 - cX, 2) + Math.pow((pA[1] + pB[1])/2 - cY, 2), .5);
+	}
+	
+	//gets the four corners of a shape
+	function getPoints(x, y, r, theta)
+	{
+		var t_theta = theta + Pi5_4;
+		var pts = []
+		for(var i = 0; i < 4; i += 1)
+		{	
+			pts.push([x + r * Math.cos(t_theta), y + r * Math.sin(t_theta)]);	
+			t_theta += Pi_2;
+		}
+		return pts;
+	}
+	
+	//gets two groups of points that represent the visible sides of an object
+	function getVisibleSides(theta, pts, sideColorA, sideColorB)
+	{
+		//get the distance from the focal point to the center of each side
+		var dAB, dBC, dCD, dDA;
+		dAB = middleToCenter(pts[0], pts[1]);
+		dBC = middleToCenter(pts[1], pts[2]);
+		dCD = middleToCenter(pts[2], pts[3]);
+		dDA = middleToCenter(pts[3], pts[0]);
+		var ordered = [];
+		var dists = [];
+		var comp, sides;
+		
+		//now we're going to sort them by distance descending
+		for(var i = 0; i < 4; i += 1)
+		{
+			switch(i)
+			{
+				case 0: comp = dAB; sides = [pts[0], pts[1]]; col = sideColorA; break;
+				case 1: comp = dBC; sides = [pts[1], pts[2]]; col = sideColorB; break;
+				case 2: comp = dCD; sides = [pts[2], pts[3]]; col = sideColorA; break;
+				case 3: comp = dDA; sides = [pts[3], pts[0]]; col = sideColorB; break;
+			}
+			
+			var ind;
+			for(ind = 0; ind < dists.length; ind += 1)
+			{
+				if(comp > dists[ind]) break;
+			}
+			ordered.splice(ind, 0, [sides, col]);
+			dists.splice(ind, 0, comp);
+		}
+		
+		//return the closest two faces (the other two are not visible)
+		return ordered.slice(-2);
+	}
+	
+	//draws/fills a shape by connecting a series of points
+	function drawShapeFromPoints(pts, cx, color)
+	{
+		cx.fillStyle = color;
+		cx.beginPath();
+		cx.moveTo(pts[0][0], pts[0][1]);
+		for(var i = 1; i < pts.length; i += 1)
+		{
+			cx.lineTo(pts[i][0], pts[i][1]);
+		}
+		cx.fill();
+	}
+
+	
+	function draw3DSquare(p, height, theta, radius, r2, r1, front, topColor = 'blue', sideAColor = colorA, sideBColor = colorB)
+	{
+		var CX = front ? cx : cxBase;
+		
+		//scale x, y, radius
+		var adjX = cX + adjust(height, p[0] - cX);
+		var adjY = cY + adjust(height, p[1] - cY);
+		var adjR = adjust(height, radius);	
+		
+		//locate the four corners
+		var pts = getPoints(adjX, adjY, adjR, theta);
+		
+		//get and draw the two visible sides
+		var sides = getVisibleSides(theta, pts, sideAColor, sideBColor);
+		for(var i = 0; i < 2; i += 1)
+		{
+			//first two points are on the square itself, second two are calculated based on the object's height size
+			var p1, p2, p3, p4;
+			p1 = sides[i][0][0];
+			p2 = sides[i][0][1];
+			p3 = [p2[0] * r2 + r1 * cX, p2[1] * r2 + r1 * cY];
+			p4 = [p1[0] * r2 + r1 * cX, p1[1] * r2 + r1 * cY];
+			
+			drawShapeFromPoints([p1,p2,p3,p4], CX, sides[i][1]);
+		}
+		
+		//draw the top
+		drawShapeFromPoints(pts, CX, topColor);
+	}
+	
+	
+	
+	
+		
+	//draws a loading status bar
+	function animate()
+	{
+		var nowTime = new Date().getTime();
+		var elapsed = nowTime - lastTime;
+		lastTime = nowTime;
+		cx.clearRect(0,0,w,h);
+		theta += thetaPerMilli * elapsed;
+		thetaJump += thetaJumpPerMilli * elapsed;
+		
+		height = centerDepth + jumpHeight * Math.abs(Math.sin(thetaJump));
+		
+		draw3DSquare([pX, pY], height, theta, radius, r2, r1, true);
+		
+		
+		
+
+		
+		requestAnimationFrame(animate);
+	}
+			
+	startLoading();
+
+	
+	
+</script>
+
+
+
+</body>
+
+</html> 
