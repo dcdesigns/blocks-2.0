@@ -14,6 +14,13 @@ var phase = 0;
 var targetAlpha = 1;
 var optionAlpha = 0;
 var lastTime = new Date();
+var bridgeBuffer = 1;
+var lastCX = null;
+
+function posToPix(pos)
+{
+	return [scrn.sx + (pos[0] + .5) * scrn.sq, scrn.sy + (pos[1] + .5) * scrn.sq];
+}
 
 //reset screen sizing to fill properly
 function reConfigure()
@@ -98,7 +105,7 @@ function reConfigure()
 			effX = level.size[1];
 			effY = level.size[0];
 		}
-		sqSide = Math.min((scrn.w- 2* outBord-butX)/effX, (scrn.h - 2* outBord - butY)/effY);
+		sqSide = Math.min((scrn.w- butX)/(effX + 2 * outBord), (scrn.h - butY)/(effY + 2 * outBord));
 		
 
 		//if the current square size is better, set it as the best
@@ -139,6 +146,11 @@ function reConfigure()
 			scrn.ty = (flipped > 0)? 0 : scrn.sq * flipped * level.size[1];
 			scrn.targetR = 2 * scrn.sq * Math.pow(2, .5);
 			scrn.sqBuffer = sqBuffer * squareImg.height;
+			scrn.centerX = (level.size[0] / 2) * scrn.sq;
+			scrn.centerY = (level.size[1] / 2) * scrn.sq;
+			scrn.radius = (scrn.sqReduc/2)/(Math.sin(Pi_4));
+			player.radius = (scrn.sqReduc * playerSize/2)/(Math.sin(Pi_4));
+			bridgeBuffer = bridgeBufferScale * scrn.sqBuffer;
 		}
 
 	}
@@ -154,7 +166,7 @@ function reConfigure()
 		cx[i].translate(0, scrn.t);
 		
 		//rotate and move squares/player canvas
-		if(i == MID || i == BASE)
+		if(!([BUT_CANV, BUT_SEL_CANV, BACK].includes(i)))
 		{
 			cx[i].translate(scrn.sx, scrn.sy);
 			cx[i].rotate(-Math.PI/2 * flipped);
@@ -196,8 +208,14 @@ function reConfigure()
 	{
 		drawBase();	
 	}
-
-	level.drawn = true;
+	
+	if(level.drawn == false)
+	{
+		player.pos = vectorCopy(level.playerStart);
+		player.lastMatchPos = vectorCopy(level.playerStart);
+		killXY();
+		level.drawn = true;
+	}
 }
 
 function drawButton(img, cx, imgInd, butInd)
@@ -234,13 +252,75 @@ function drawButtonHighlight(cx, butInd, color, alpha, scale = 1)
 	cx.globalAlpha = 1;
 }
 
+function drawBridge(pX, pY, sizeX, sizeY)
+{
+	
+	cx[BASE].drawImage(squareImg, (Ice.imgInd) * squareImg.height + bridgeBuffer, bridgeBuffer, squareImg.height - 2 * bridgeBuffer, squareImg.height - 2 * bridgeBuffer,
+		pX, pY, sizeX, sizeY);
+}
+
+function connectIce()
+{
+	var sizeXhor = 2 * scrn.sqOff;
+	var sizeYhor = sizeXhor * .2;
+	var sizeXvert = sizeYhor;
+	var sizeYvert = sizeXhor;
+	cx[BASE].globalAlpha = 1;
+	for(var y = 0; y < level.size[1]; y += 1)
+	{
+		var pYhor = (y + .5) * scrn.sq - sizeYhor/2;
+		var pYvert = (y) * scrn.sq + scrn.sqReduc + scrn.sqOff;
+		for(var x = 0; x < level.size[0]; x += 1)
+		{
+			if(level.squares[y][x] == Ice)
+			{				
+				//check hor to right
+				if(x < level.size[0] - 1 && level.squares[y][x + 1] == Ice)
+				{
+					var pXhor = (x) * scrn.sq + scrn.sqReduc + scrn.sqOff;
+					drawBridge(pXhor, pYhor, sizeXhor, sizeYhor);
+				}
+				
+				//check vert down
+				if(y < level.size[1] - 1 && level.squares[y + 1][x] == Ice)
+				{
+					var pXvert = (x + .5) * scrn.sq - sizeXvert/2;
+					drawBridge(pXvert, pYvert, sizeXvert, sizeYvert);
+				}
+				
+				//check diag down right
+				if(x < level.size[0] - 1 && y < level.size[1] - 1 && level.squares[y + 1][x + 1] == Ice)
+				{
+					cx[BASE].save();
+					cx[BASE].translate(scrn.sq * (x + 1), scrn.sq * (y + 1));
+					cx[BASE].rotate(Pi_4);
+					cx[BASE].translate(-scrn.sq/2  , -sizeYhor/2);
+					drawBridge(0, 0, scrn.sq, sizeYhor);
+					cx[BASE].restore();
+				}
+				
+				//check diag down left
+				if(x > 0 && y < level.size[1] - 1 && level.squares[y + 1][x - 1] == Ice)
+				{
+					cx[BASE].save();
+					cx[BASE].translate(scrn.sq * (x), scrn.sq * (y + 1));
+					cx[BASE].rotate(-Pi_4);
+					cx[BASE].translate(-scrn.sq/2  , -sizeYhor/2);
+					drawBridge(0, 0, scrn.sq, sizeYhor);
+					cx[BASE].restore();
+				}
+			}
+		}
+	}
+	cx[BASE].globalAlpha = 1;
+}
+
 //draws the buttons and game board
 function drawBase()
 {
 	//reset and draw a black background
-	cx[BACK].fillStyle = 'black';
+	cx[BACK].fillStyle = COLOR_BACK;
 	cx[BACK].fillRect(0,0,scrn.w,scrn.h);
-	cx[BUT_CANV].clearRect(-5000,-5000, 10000, 10000);
 	cx[BUT_CANV].clearRect(0, 0, canv[BASE].width, canv[BASE].height);
 
 	//draw buttons: this canvas is not rotated
@@ -249,6 +329,32 @@ function drawBase()
 		drawButton(butImg, cx[BUT_CANV], butts[paused][i].imgInd, i);
 	}
 	
+	
+	var sorted = [];
+	var dists = [];
+	var centerX = (level.size[0] - 1)/2;
+	var centerY = (level.size[1] - 1)/2;
+	for(var x = 0; x < level.size[0]; x += 1)
+	{
+		for(var y = 0; y < level.size[1]; y += 1)
+		{
+			if(level.squares[y][x] == EmptySquare) continue;
+			
+			var dist = Math.pow(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2), .5);
+
+			var i;
+			for(i = 0; i < dists.length; i += 1)
+			{
+				if(dist > dists[i]) break;
+			}
+			sorted.splice(i, 0, [x, y]);
+			dists.splice(i, 0, dist);
+		}
+	}
+	for(var i = 0; i < sorted.length; i += 1)
+	{
+		draw3DSquare(sorted[i], 0, 0, 0, scrn.radius, scrn.r2, scrn.r1, cx[BUILDINGS], COLOR_BUILDING_SIDEA, COLOR_BUILDING_SIDEA, COLOR_BUILDING_SIDEB, 1);
+	}
 	
 	
 	for(var i = 0; i < level.size[0]; i += 1)
@@ -259,12 +365,14 @@ function drawBase()
 		}
 	}
 	
+	//connectIce();
+	
 }
 
 
 function drawSquare(ind_x, ind_y, imgInd)
 {
-	cx[BASE].clearRect(ind_x * (scrn.sq), ind_y * (scrn.sq), scrn.sq, scrn.sq);
+	//cx[BASE].clearRect(ind_x * (scrn.sq), ind_y * (scrn.sq), scrn.sq, scrn.sq);
 	cx[BASE].drawImage(squareImg, (imgInd) * squareImg.height + scrn.sqBuffer, scrn.sqBuffer, squareImg.height - 2* scrn.sqBuffer, squareImg.height - 2*scrn.sqBuffer,
 		scrn.sqOff + ind_x * (scrn.sq), scrn.sqOff + ind_y * (scrn.sq), scrn.sqReduc, scrn.sqReduc);
 }
@@ -272,14 +380,14 @@ function drawSquare(ind_x, ind_y, imgInd)
 
 function drawTarget()
 {
-		
+	var CX = cx[ABOVE_BASE];	
 	if(level.index < helperLevels)
 	{
 		//create target lines emanating from the player
-		cx[MID].beginPath();
-		cx[MID].globalAlpha = 1;
-		cx[MID].lineWidth = scrn.sq/20;
-		cx[MID].strokeStyle = 'rgb(7,61,189)';
+		CX.beginPath();
+		CX.globalAlpha = 1;
+		CX.lineWidth = scrn.sq/20;
+		CX.strokeStyle = COLOR_TARGET_LINES;
 		var pX = (player.pos[0]) * (scrn.sq) + scrn.sq/2;
 		var pY = (player.pos[1]) * (scrn.sq) + scrn.sq/2;
 		
@@ -292,77 +400,200 @@ function drawTarget()
 
 					tX = player.pos[0] + x;
 					tY = player.pos[1] + y;
-					cx[MID].moveTo(pX + x * scrn.sq, pY + y * scrn.sq);
-					cx[MID].lineTo(pX, pY);
+					CX.moveTo(pX + x * scrn.sq, pY + y * scrn.sq);
+					CX.lineTo(pX, pY);
 				}
 			}
 		}
-		cx[MID].stroke();
+		CX.stroke();
 
 		//erase lines outsize of the current radius
 		var curR = scrn.targetR * optionAlpha;	
-		cx[MID].globalAlpha = .6;
-		cx[MID].globalCompositeOperation = 'destination-in';
-		cx[MID].beginPath();
-		cx[MID].arc(pX, pY, curR, 0, 2 * Math.PI);
-		cx[MID].fill();
+		CX.globalAlpha = .6;
+		CX.globalCompositeOperation = 'destination-in';
+		CX.beginPath();
+		CX.arc(pX, pY, curR, 0, 2 * Math.PI);
+		CX.fill();
 
 		//either erase parts of the inner radius or fade out
 		curR -= scrn.sq/8;
 		if(curR > 0)
 		{
 			//second half of phase: fade out
-			if(optionAlpha > 1) cx[MID].globalAlpha = .4 + (optionAlpha - 1) * .6;
+			if(optionAlpha > 1) CX.globalAlpha = .4 + (optionAlpha - 1) * .6;
 			
 			//first half of phase: constant level
-			else cx[MID].globalAlpha = .4;
+			else CX.globalAlpha = .4;
 			
-			cx[MID].beginPath();
-			cx[MID].arc(pX, pY, curR, 0, 2 * Math.PI);
-			cx[MID].globalCompositeOperation = 'destination-out';
-			cx[MID].fill();
+			CX.beginPath();
+			CX.arc(pX, pY, curR, 0, 2 * Math.PI);
+			CX.globalCompositeOperation = 'destination-out';
+			CX.fill();
 		}
-		cx[MID].globalCompositeOperation = 'source-over';
+		CX.globalCompositeOperation = 'source-over';
 	}
 	
 	//highlight active target
 	if(click.act == SELECT_MOVE && click.delta[0] !== null)
 	{
 		
-		cx[MID].globalAlpha = targetAlpha;
-		cx[MID].fillStyle = targetColor;
-		//cx[MID].fillRect((player.pos[0] + click.delta[0]) * (scrn.sq) + scrn.sqOff, (player.pos[1] + click.delta[1]) * (scrn.sq) + scrn.sqOff, scrn.sqReduc, scrn.sqReduc);
-		cx[MID].fillRect((player.pos[0] + click.delta[0]) * (scrn.sq), (player.pos[1] + click.delta[1]) * (scrn.sq), scrn.sq, scrn.sq);
+		CX.globalAlpha = targetAlpha;
+		CX.fillStyle = COLOR_TARGET;
+		//CX.fillRect((player.pos[0] + click.delta[0]) * (scrn.sq) + scrn.sqOff, (player.pos[1] + click.delta[1]) * (scrn.sq) + scrn.sqOff, scrn.sqReduc, scrn.sqReduc);
+		CX.fillRect((player.pos[0] + click.delta[0]) * (scrn.sq), (player.pos[1] + click.delta[1]) * (scrn.sq), scrn.sq, scrn.sq);
 	}
-	cx[MID].globalAlpha = 1;
+	CX.globalAlpha = 1;
 	
 }
 
 
+
+//gets the distance from a midpoint of two points to the focus center
+function middleToCenter(pA, pB)
+{
+	return Math.pow(Math.pow((pA[0] + pB[0])/2 - scrn.centerX, 2) + Math.pow((pA[1] + pB[1])/2 - scrn.centerY, 2), .5);
+}
+
+//gets the four corners of a shape
+function getPoints(x, y, r, theta)
+{
+	var t_theta = theta + Pi5_4;
+	var pts = []
+	for(var i = 0; i < 4; i += 1)
+	{	
+		pts.push([x + r * Math.cos(t_theta), y + r * Math.sin(t_theta)]);	
+		t_theta += Pi_2;
+	}
+	return pts;
+}
+
+//gets two groups of points that represent the visible sides of an object
+function getVisibleSides(theta, pts, sideColorA, sideColorB)
+{
+	//get the distance from the focal point to the center of each side
+	var dAB, dBC, dCD, dDA;
+	dAB = middleToCenter(pts[0], pts[1]);
+	dBC = middleToCenter(pts[1], pts[2]);
+	dCD = middleToCenter(pts[2], pts[3]);
+	dDA = middleToCenter(pts[3], pts[0]);
+	var ordered = [];
+	var dists = [];
+	var comp, sides;
+	
+	//now we're going to sort them by distance descending
+	for(var i = 0; i < 4; i += 1)
+	{
+		switch(i)
+		{
+			case 0: comp = dAB; sides = [pts[0], pts[1]]; col = sideColorA; break;
+			case 1: comp = dBC; sides = [pts[1], pts[2]]; col = sideColorB; break;
+			case 2: comp = dCD; sides = [pts[2], pts[3]]; col = sideColorA; break;
+			case 3: comp = dDA; sides = [pts[3], pts[0]]; col = sideColorB; break;
+		}
+		
+		var ind;
+		for(ind = 0; ind < dists.length; ind += 1)
+		{
+			if(comp > dists[ind]) break;
+		}
+		ordered.splice(ind, 0, [sides, col]);
+		dists.splice(ind, 0, comp);
+	}
+	
+	//return the closest two faces (the other two are not visible)
+	return ordered.slice(-2);
+}
+
+//draws/fills a shape by connecting a series of points
+function drawShapeFromPoints(pts, cx, color, fadeAlpha)
+{
+	cx.fillStyle = color;
+	cx.globalAlpha = fadeAlpha;
+	cx.beginPath();
+	cx.moveTo(pts[0][0], pts[0][1]);
+	for(var i = 1; i < pts.length; i += 1)
+	{
+		cx.lineTo(pts[i][0], pts[i][1]);
+	}
+	cx.fill();
+
+}
+
+//scale a value based on an object's height
+function adjust(height, value)
+{
+	var t_height = height - z_min;
+	if(t_height <= 0) return 0;
+	
+	return value * t_height/(-z_min);
+}
+
+function posToPix(pos)
+{
+	return [(pos[0] + .5) * scrn.sq, (pos[1] + .5) * scrn.sq];
+}
+
+
+function draw3DSquare(p, height, self_height, theta, radius, r2, r1, CX, topColor, sideAColor, sideBColor, fadeAlpha)
+{
+	var t_height = height + self_height;
+	//convert postion to pixels
+	var pixPos = posToPix(p);
+	
+	//scale x, y, radius
+	var adjX = scrn.centerX + adjust(t_height, pixPos[0] - scrn.centerX);
+	var adjY = scrn.centerY + adjust(t_height, pixPos[1] - scrn.centerY);
+	//console.log(p[0], p[1], pixPos[0], pixPos[1]);
+	var adjR = adjust(t_height, radius);	
+	
+	//locate the four corners
+	var pts = getPoints(adjX, adjY, adjR, theta);
+
+	//get and draw the two visible sides
+	var sides = getVisibleSides(theta, pts, sideAColor, sideBColor);
+	for(var i = 0; i < 2; i += 1)
+	{
+		//first two points are on the square itself, second two are calculated based on the object's height size
+		var p1, p2, p3, p4;
+		p1 = sides[i][0][0];
+		p2 = sides[i][0][1];
+		p3 = [p2[0] * r2 + r1 * scrn.centerX, p2[1] * r2 + r1 * scrn.centerY];
+		p4 = [p1[0] * r2 + r1 * scrn.centerX, p1[1] * r2 + r1 * scrn.centerY];
+		
+
+		drawShapeFromPoints([p1,p2,p3,p4], CX, sides[i][1], fadeAlpha);
+	}
+	
+	
+	//draw the top
+	drawShapeFromPoints(pts, CX, topColor, fadeAlpha);
+}
 
 
 function drawPlayer(elapsed)
 {
 	//scale player at and above base
 	if(player.z >= 0) nowSize = scrn.sq * interp(0, player.z, playerJumpHeight, 1, playerScaleTopJump);
-	
+
 	//scale player falling off edge
 	else nowSize = scrn.sq * interp(z_min, player.z, 0, 0, 1);
+	
+	var CX = (player.z >= 0) ? cx[ABOVE_BASE] : (player.z > -blockDepth) ? cx[BELOW_BASE] : cx[BELOW_ALL];
 
-	cx[MID].save();
-	cx[MID].translate((player.pos[0] + .5) * (scrn.sq), (player.pos[1] + .5) * (scrn.sq));
-	cx[MID].rotate(player.theta);
-	cx[MID].globalAlpha = player.opacity;
-	cx[MID].drawImage(player.img, 0, 0, player.img.height, player.img.height, -.5 * nowSize, -.5 * nowSize, nowSize, nowSize);
-	cx[MID].restore();
-	cx[MID].globalAlpha = 1;
+	CX.save();
+	CX.translate((player.pos[0] + .5) * (scrn.sq), (player.pos[1] + .5) * (scrn.sq));
+	CX.rotate(player.theta);
+	CX.globalAlpha = player.opacity;
+	CX.drawImage(player.img, 0, 0, player.img.height, player.img.height, -.5 * nowSize, -.5 * nowSize, nowSize, nowSize);
+	CX.restore();
+	CX.globalAlpha = 1;
 }
 
 function animate()
 {
 	
 	var newTime = new Date();
-	var elapsed = Math.min(35, newTime - lastTime);
+	var elapsed = Math.min(20, newTime - lastTime);
 	lastTime = newTime;
 	phase += elapsed;
 	var sinVal = Math.sin( 2 * Math.PI * phase/targetMillis);
@@ -391,14 +622,17 @@ function animate()
 	
 
 	//clear the temp canvases
-	cx[MID].clearRect(-5000,-5000, 10000, 10000);
+	if(lastCX != null)
+	{
+		lastCX.clearRect(-5000,-5000, 10000, 10000);
+	}
 	cx[BUT_SEL_CANV].clearRect(0,0,canv[BUT_SEL_CANV].width, canv[BUT_SEL_CANV].height);
 	
 	
 	//highlight buttons
 	if((click.act === SELECT_ZOOM && click.but === SELECT_ZOOM_COL[paused]) || (click.act === SELECT_BUT && click.but !== SELECT_ZOOM_COL[paused] && click.but !== null && !butts[paused][click.but].ignore))
 	{
-		drawButtonHighlight(cx[BUT_SEL_CANV], click.but,'RGB(25,124,247)' , 1, 1);
+		drawButtonHighlight(cx[BUT_SEL_CANV], click.but, COLOR_BUTTON_HOVER, 1, 1);
 	}
 	
 	//draw player/targets/status
@@ -423,7 +657,7 @@ function animate()
 		cx[BUT_SEL_CANV].font = (scrn.but * .2) + 'px Roboto';
 		cx[BUT_SEL_CANV].textAlign = 'center';
 		cx[BUT_SEL_CANV].textBaseline = 'top';
-		cx[BUT_SEL_CANV].fillStyle = 'rgb(135,135,135)';
+		cx[BUT_SEL_CANV].fillStyle = COLOR_LEVEL_TEXT;
 		
 		//horizontal buttons
 		if(!buttsFlipped) cx[BUT_SEL_CANV].fillText("LEVEL " + (level.index + 1), scrn.butOff[paused] + scrn.but * (MOVES_DISPLAY + .5), scrn.h - scrn.but + scrn.but * .1);	
@@ -439,8 +673,8 @@ function animate()
 			else flashingPhase += elapsed;
 			
 			var fade = .7 * Math.abs(Math.sin( 2 * Math.PI * flashingPhase/flashMillis));
-			drawButtonHighlight(cx[BUT_SEL_CANV], UNDO_IND,'RGB(25,124,247)' , fade, .8);
-			drawButtonHighlight(cx[BUT_SEL_CANV], RESTART_IND,'RGB(25,124,247)' , fade, .8);
+			drawButtonHighlight(cx[BUT_SEL_CANV], UNDO_IND, COLOR_BUTTON_FLASH , fade, .8);
+			drawButtonHighlight(cx[BUT_SEL_CANV], RESTART_IND, COLOR_BUTTON_FLASH , fade, .8);
 
 			
 			deadLast = true;
@@ -481,7 +715,11 @@ function animate()
 
 		//player
 		updatePlayer(elapsed);
-		drawPlayer(elapsed);
+		//drawPlayer(elapsed);
+		
+		var CX = (player.z >= 0) ? cx[ABOVE_BASE] : (player.z > -blockDepth) ? cx[BELOW_BASE] : cx[BELOW_ALL];
+		lastCX = CX;
+		draw3DSquare(player.pos, player.z, playerThickness, player.theta, player.radius, player.r2, player.r1,CX, COLOR_PLAYER_TOP, COLOR_PLAYER_SIDEA, COLOR_PLAYER_SIDEB, player.opacity);
 	}
 	
 	

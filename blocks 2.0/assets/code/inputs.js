@@ -4,18 +4,38 @@ function keyEvent(event)
 {
 	switch(event.keyCode)
 	{
-		case 78:
+		//s
+		case 83:
+			level.index = -1;
 			gameOver = false;
+			killAll();
 			nextLevel();
 			break;
+		//e
+		case 69:
+			gameOver = false;
+			killAll();
+			level.index = GAME_LEVELS.length - 2;
+			nextLevel();
+			break;
+		//n
+		case 78:
+			gameOver = false;
+			killAll();
+			nextLevel();
+			break;
+		//p
 		case 80:
 			level.index = Math.max(-1, level.index - 2);
 			gameOver = false;
+			killAll();
 			nextLevel();
 			break;
+		//r
 		case 82:
 			restartBut.action();
 			break;
+		//z
 		case 90:
 			undoBut.action();
 			break;
@@ -48,7 +68,7 @@ function getButtonInd()
 		else if(scrn.butY && click.end[1] > scrn.h - scrn.butY) ret = Math.floor((click.end[0] - scrn.butOff[paused])/scrn.but);
 		
 		if(ret < 0 || ret > butts[paused].length -1) ret = null;
-		console.log(ret);
+		//console.log(ret);
 	}
 	return ret;
 }

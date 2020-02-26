@@ -7,24 +7,44 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <div id="canvDiv" class="unselectable" style="position:absolute; left: 0, top: 0;">
-	<canvas id="canvRotate0" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
-	<canvas id="canvRotate1" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
-	<canvas id="canvRotate2" style="position: absolute; left: 0; top: 0; z-index: 2;"></canvas>
-	<canvas id="canvRotate3" style="position: absolute; left: 0; top: 0; z-index: 3;"></canvas>
-	<canvas id="canv0" style="position: absolute; left: 0; top: 0; z-index: 4;"></canvas>
-	<canvas id="canv1" style="position: absolute; left: 0; top: 0; z-index: 5;"></canvas>
-	<canvas id="canv2" style="position: absolute; left: 0; top: 0; z-index: 6;"></canvas>
-	<canvas id="canv3" oncontextmenu="return false;" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>	
+	<canvas id="canv0" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+	<canvas id="canv1" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+	<canvas id="canv2" style="position: absolute; left: 0; top: 0; z-index: 2;"></canvas>
+	<canvas id="canv3" style="position: absolute; left: 0; top: 0; z-index: 3;"></canvas>
+	<canvas id="canv4" style="position: absolute; left: 0; top: 0; z-index: 4;"></canvas>
+	<canvas id="canv5" style="position: absolute; left: 0; top: 0; z-index: 5;"></canvas>
+	<canvas id="canv6" style="position: absolute; left: 0; top: 0; z-index: 6;"></canvas>
+	<canvas id="canv7" oncontextmenu="return false;" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>	
 </div>
 
 <script>
-
+	//loading bar colors: defined here because the color image isn't loaded yet
+	const color_load_back = 'black';
+	const color_load_base = 'gray';
+	const color_load_bar = 'RGB(25,124,247)'
+	
+	//color indexes
+	var COLOR_BACK= '';
+	var COLOR_PLAYER_TOP= '';
+	var COLOR_PLAYER_SIDEA= '';
+	var COLOR_PLAYER_SIDEB= '';
+	var COLOR_BUILDING_SIDEA= '';
+	var COLOR_BUILDING_SIDEB= '';
+	var COLOR_BUTTON_HOVER= '';
+	var COLOR_BUTTON_FLASH= '';
+	var COLOR_TARGET= '';
+	var COLOR_TARGET_LINES= '';
+	var COLOR_LEVEL_TEXT= '';
+	
 	//enums
 	const BACK = 0;
-	const BASE = 1;
-	const BUT_SEL_CANV = 2;
-	const MID = 3;
-	const BUT_CANV = 4;
+	const BELOW_ALL = 1;
+	const BUILDINGS = 2;
+	const BELOW_BASE = 3;
+	const BASE = 4;
+	const BUT_SEL_CANV = 5;
+	const ABOVE_BASE = 6;
+	const BUT_CANV = 7;
 
 	const CLICK_START = 0;
 	const CLICK_MOVE = 1;
@@ -41,9 +61,17 @@
 	const DEAD = 8;
 	const WINNING = 9;
 	const FINISHED = 10;
+	
+	const Pi_4 = Math.PI/4;
+	const Pi3_4 = 3 * Pi_4;
+	const Pi5_4 = 5 * Pi_4;
+	const Pi7_4 = 7 * Pi_4;
+	const Pi_2 = Math.PI/2;
+	const Pi3_2 = Pi_2 * 3;
 
-	var butImg, squareImg, playerImg, numbersImg;
+	var colorsImg, butImg, squareImg, playerImg, numbersImg;
 	var butSrcs =  [
+		['blocks/pics/colors.svg', "colorsImg"],
 		['blocks/pics/buttons.svg', "butImg"], 
 		['blocks/pics/squares.svg', "squareImg"],
 		['blocks/pics/player.svg', "playerImg"],
@@ -148,17 +176,11 @@
 			mainDiv.style.top = 0 + 'px';
 			
 			//create canvas array
-			for(var r = 0; r < 2; r += 1)
+			for(var i = 0; i <= BUT_CANV; i += 1)
 			{
-				if(!r) canvStr = "canvRotate";
-				else canvStr = "canv";
-			
-				for(var i = 0; i < 4; i += 1)
-				{
-					var newCanv = document.getElementById(canvStr + i);
-					canv.push(newCanv);
-					cx.push(newCanv.getContext("2d"));
-				}
+				var newCanv = document.getElementById("canv" + i);
+				canv.push(newCanv);
+				cx.push(newCanv.getContext("2d"));
 			}
 			
 			//start the loading animation
@@ -179,13 +201,13 @@
 		var r_w = Math.min(800, w - 2 * 50);
 		
 		//draw loading bar
-		cx[BACK].fillStyle = 'black';
+		cx[BACK].fillStyle = color_load_back;
 		cx[BACK].fillRect(0, 0, w, h);
-		cx[BACK].fillStyle = 'gray';
+		cx[BACK].fillStyle = color_load_base;
 		cx[BACK].fillRect((w - r_w)/2, (h - r_h)/2, r_w, r_h);
-		cx[BACK].fillStyle = 'RGB(25,124,247)'
+		cx[BACK].fillStyle = color_load_bar;
 		cx[BACK].fillRect((w - r_w)/2, (h - r_h)/2, r_w * loaded/toLoad, r_h);
-	
+		
 		//next loop
 		if(loaded < toLoad)
 		{
@@ -197,6 +219,44 @@
 			startGame();
 		}
 	}
+	
+	function setColors()
+	{
+		var buff = .2;
+		var full = colorsImg.height;
+		var offset = full * (1 - buff);
+		
+		for(var i = 0; i <= 10; i += 1)
+		{
+			cx[BACK].drawImage(colorsImg, full * i + offset, offset, offset, offset, 0,0,60,60);
+			var imgData = cx[BACK].getImageData(5,5,20,20);
+			var rgb = 'rgb(';
+			for(j = 0; j < 3; j += 1)
+			{
+				rgb += imgData.data[j];
+				if(j < 2) rgb += ',';
+				else rgb += ')';
+			}
+			console.log(j);
+			switch(i)
+			{
+				case 0: COLOR_BACK = rgb; break;
+				case 1: COLOR_PLAYER_TOP = rgb; break;
+				case 2: COLOR_PLAYER_SIDEA = rgb; break;
+				case 3: COLOR_PLAYER_SIDEB = rgb; break;
+				case 4: COLOR_BUILDING_SIDEA = rgb; break;
+				case 5: COLOR_BUILDING_SIDEB = rgb; break;
+				case 6: COLOR_BUTTON_HOVER = rgb; break;
+				case 7: COLOR_BUTTON_FLASH = rgb; break;
+				case 8: COLOR_TARGET = rgb; break;
+				case 9: COLOR_TARGET_LINES = rgb; break; 
+				case 10: COLOR_LEVEL_TEXT = rgb; break;
+			}
+				
+		}
+	}
+			
+ 
 	
 	//gets the game going once everything's loaded
 	function startGame()
@@ -246,6 +306,7 @@
 		//screen rotate
 		window.addEventListener("orientationchange", screenFlip);
 		
+		setColors();
 		
 		
 		//load the first level

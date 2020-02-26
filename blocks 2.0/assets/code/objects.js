@@ -32,7 +32,12 @@ var scrn = {
 	sy: 0,
 	tx: 0,
 	ty: 0,
-	targetR: 1
+	targetR: 1,
+	centerX: 0,
+	centerY: 0,
+	radius: 1,
+	r1: blockDepth/(-z_min),
+	r2: 1 - (blockDepth/(-z_min)),
 }
 
 
@@ -57,6 +62,7 @@ function nextLevel()
 	
 	click.act = null;
 	killXY();
+	
 	//killAll();
 
 	level.index += 1;
@@ -68,8 +74,7 @@ function nextLevel()
 	player.movesLeft = level.moves;
 	player.history = [];
 	level.playerStart = vectorCopy(curLevel.player);
-	player.pos = vectorCopy(curLevel.player);
-	player.lastMatchPos = vectorCopy(curLevel.player);
+	
 	
 	if([BURNING, FALLING, DEAD].includes(player.state))
 	{
@@ -105,7 +110,7 @@ function nextLevel()
 	level.drawn = false;
 	player.goalLoops = 0;
 	console.log("made the level: ", level.size, level.squares[0].length, level.squares.length);
-	
+
 	lastTime = new Date();
 	return true;
 }
@@ -129,6 +134,11 @@ var player = {
 	z_vel: 0,
 	accel: z_accel,
 	jumping: false, //probably not necessary once changes are in place
+	
+	//3d stuff
+	r1: playerThickness/(-z_min),
+	r2: 1 - (playerThickness/(-z_min)),
+	radius: (scrn.sq * playerSize/2)/(Math.sin(Pi_4)),
 	
 	//rotation
 	theta: 0,
@@ -184,14 +194,19 @@ function updatePlayer(elapsed)
 	if(!on_board && player.state !== FALLING)
 	{
 		player.state = FALLING;
-		startFade();
+		//startFade();
 	}
 	
 	//update z
 	player.z_vel += elapsed * player.accel;
+	player.z_vel = Math.max(-z_vel_init, player.z_vel);
 	player.z += elapsed * player.z_vel;
 	//console.log(player.z);
-	if(player.state !== FALLING) player.z = Math.max(0, player.z);
+	if(player.state !== FALLING)
+	{
+		player.z = Math.max(0, player.z);
+		
+	}
 	else
 	{
 		player.z = Math.max(z_min, player.z);
@@ -208,7 +223,6 @@ function updatePlayer(elapsed)
 	if(player.state == WINNING && !gameOver && player.z >= playerLoadHeight)
 	{
 		player.state = ACTIVE;
-		player.accel = load_z_accel * 4;
 		nextLevel();
 	}
 	
@@ -217,6 +231,11 @@ function updatePlayer(elapsed)
 	{
 		//reset accel in case winning was active
 		player.accel = z_accel;
+		
+		if(player.jumping == false && player.z == 0)
+		{
+			player.z_vel = 0;
+		}
 		
 		//see how far we've moved from the last known square
 		dist = absVector(vectorSubtract(player.pos, player.lastMatchPos));
@@ -229,6 +248,7 @@ function updatePlayer(elapsed)
 			{
 				setSquareAction();
 				player.lastMatchPos = vectorCopy(player.pos);
+				
 			}
 			/* else
 			{
@@ -236,6 +256,7 @@ function updatePlayer(elapsed)
 				startFade();
 			} */
 		}
+		
 	}
 }
 			
@@ -309,6 +330,7 @@ function killAll()
 	killFade();
 	player.theta = 0;
 	player.state = IDLE;
+	player.jumping = false;
 }
 
 function startFade()
@@ -316,9 +338,9 @@ function startFade()
 	player.opacity_rate = opacity_rate_init;
 }
 
-function startSpin()
+function startSpin(spinVel = omega_init)
 {
-	player.omega = omega_init;
+	player.omega = spinVel;
 	player.alpha = 1;
 	player.spinDir = -player.spinDir;
 }
@@ -328,14 +350,14 @@ function slowSpin(alpha = alpha_slow)
 	player.alpha = alpha;
 }
 
-function startJump(jumpVel = z_vel_init)
+function startJump(jumpVel = z_vel_init, spinVel = omega_init)
 {
 	player.z_vel = jumpVel;
 	player.jumping = true;
 	player.vel[0] += player.target[0] / playerMillis;
 	player.vel[1] += player.target[1] / playerMillis;
 	player.target = zeroVector();
-	startSpin();
+	startSpin(spinVel);
 	if(jumpVel < z_vel_init_goal) player.state = ACTIVE;
 }
 

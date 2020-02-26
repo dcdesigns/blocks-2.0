@@ -19,11 +19,12 @@ var Goal = {
 			player.goalLoops = 0;
 		}
 		
-		startJump(z_vel_init_goal);
+		startJump(z_vel_init, omega_win);
 		player.state = WINNING;
-		if(++player.goalLoops == 2 && !gameOver) 
+		if(++player.goalLoops > 2 && !gameOver) 
 		{
 			player.z_vel = z_vel_init_load;	
+			player.omega = omega_load;
 			player.accel = load_z_accel;
 		}
 	}
@@ -62,7 +63,7 @@ var Portal = {
 };
 
 var Boost = {
-	imgInd:  16,
+	imgInd:  9,
 	animate: null,
 	act:  function()
 	{
@@ -71,18 +72,18 @@ var Boost = {
 };
 
 var EmptySquare = {
-	imgInd:  19,
+	imgInd:  2,
 	animate: null,
 	act:  function()
 	{
 		killXY();
 		player.state = FALLING;
-		startFade();
+		//startFade();
 	}
 };
 
 var TrampReg = {
-	imgInd:  9,
+	imgInd:  12,
 	animate: null,
 	act:  function()
 	{
@@ -92,7 +93,7 @@ var TrampReg = {
 };
 
 var TrampHor = {
-	imgInd:  10,
+	imgInd:  13,
 	animate: null,
 	act:  function()
 	{
@@ -103,7 +104,7 @@ var TrampHor = {
 };
 
 var TrampVrt = {
-	imgInd:  11,
+	imgInd:  14,
 	animate: null,
 	act:  function()
 	{
@@ -114,7 +115,7 @@ var TrampVrt = {
 };
 
 var TrampDDn = {
-	imgInd:  12,
+	imgInd:  15,
 	animate: null,
 	act:  function()
 	{
@@ -125,7 +126,7 @@ var TrampDDn = {
 };
 
 var TrampDUp = {
-	imgInd:  13,
+	imgInd:  16,
 	animate: null,
 	act:  function()
 	{
@@ -136,8 +137,8 @@ var TrampDUp = {
 };
 
 var TrampClockwise = {
-	imgInd:  14,
-	animate: null,
+	imgInd:  17,
+	animate: null,//{time: 400, minInd: 17, maxInd: 24},
 	act:  function()
 	{
 		player.vel = [player.vel[1], -player.vel[0]];
@@ -146,8 +147,8 @@ var TrampClockwise = {
 };
 
 var TrampCounterClockwise = {
-	imgInd:  15,
-	animate: null,
+	imgInd:  18,
+	animate: null,//{time: TrampClockwise.animate.time, minInd: 25, maxInd: 32},
 	act:  function()
 	{
 		player.vel = [-player.vel[1], player.vel[0]];
@@ -156,7 +157,7 @@ var TrampCounterClockwise = {
 };
 
 var Lava = {
-	imgInd:  2,
+	imgInd:  3,
 	animate: null, //{time: 500, minInd: 2, maxInd: 4},
 	act:  function()
 	{
@@ -173,8 +174,10 @@ var Lava = {
 var sqCodes = {
 	"G": Grass,
 	"X": Goal,
+	"E": EmptySquare,
 	"L": Lava,
 	"I": Ice,
+	"P": Portal,
 	"B": Boost,
 	"T": TrampReg,
 	"-": TrampHor,
@@ -183,8 +186,8 @@ var sqCodes = {
 	"/": TrampDUp,
 	"W": TrampClockwise,
 	"C": TrampCounterClockwise,
-	"P": Portal,
-	"E": EmptySquare,
+	
+	
 };
 
  

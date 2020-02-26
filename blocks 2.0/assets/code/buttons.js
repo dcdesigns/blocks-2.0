@@ -58,10 +58,10 @@ var restartBut = {
 	ignore: false,
 	action: function(){
 		
-		
+		killAll();
 		if(player.history.length)
 		{
-			killAll();
+			
 			player.state = IDLE;
 			gameOver = false;
 			player.pos = player.history[0];
@@ -77,10 +77,10 @@ var undoBut = {
 	ignore: false,
 	action: function(){
 		
-		
+		killAll();
 		if(player.history.length)
 		{
-			killAll();
+			
 			player.state = IDLE;
 			gameOver = false;
 			player.pos = player.history.pop();
