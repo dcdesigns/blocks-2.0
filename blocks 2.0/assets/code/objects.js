@@ -27,7 +27,7 @@ var scrn = {
 	sqOff: 0,
 	butX: 0,
 	butY: 0,
-	butOff: 0,
+	butOff: [0,0],
 	sx: 0,
 	sy: 0,
 	tx: 0,

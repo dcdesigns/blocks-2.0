@@ -69,20 +69,27 @@ function reConfigure()
 				break;	
 		}
 		
-		var butX, butY, butSide, butOff, sqSide, sqX, sqY;
+		var butX, butY, butSide, sqSide, sqX, sqY;
+		var butOff = [];
 		if(butsVert)
 		{
-			butSide = Math.min(scrn.h/butts[paused].length, maxButton);
+			butSide = Math.min(scrn.h/butts[0].length, scrn.h/butts[1].length, maxButton);
 			butX = butSide;
 			butY = 0;
-			butOff = (scrn.h - butSide * butts[paused].length) /2;
+			for(var j = 0; j < 2; j += 1)
+			{
+				butOff.push((scrn.h - butSide * butts[j].length) /2);
+			}
 		}
 		else
 		{
-			butSide = Math.min(scrn.w/butts[paused].length, maxButton);
+			butSide = Math.min(scrn.w/butts[0].length, scrn.w/butts[1].length, maxButton);
 			butY = butSide;
 			butX = 0;
-			butOff = (scrn.w - butSide * butts[paused].length) /2;
+			for(var j = 0; j < 2; j += 1)
+			{
+				butOff.push((scrn.w - butSide * butts[j].length) /2);
+			}
 		}
 		var effX = level.size[0];
 		var effY = level.size[1];
@@ -193,6 +200,39 @@ function reConfigure()
 	level.drawn = true;
 }
 
+function drawButton(img, cx, imgInd, butInd)
+{
+	//horizontal buttons
+	if(!buttsFlipped)
+	{
+		cx.drawImage(img, imgInd * img.height, 0, img.height, img.height,
+			scrn.butOff[paused] + scrn.but * butInd, scrn.h - scrn.but, scrn.but, scrn.but);
+	}
+	//vertical buttons
+	else
+	{
+		cx.drawImage(img, imgInd * img.height, 0, img.height, img.height,
+			scrn.w - scrn.but, scrn.h - scrn.butOff[paused] - scrn.but * (butInd + 1), scrn.but, scrn.but);
+	}
+}
+
+function drawButtonHighlight(cx, butInd, color, alpha, scale = 1)
+{
+	var size = (scrn.but * scale);
+	var offset = (scrn.but - size)/2;
+	cx.globalAlpha = alpha;
+	cx.fillStyle = color;
+
+	if(!buttsFlipped)
+	{
+		cx.fillRect(scrn.butOff[paused] + scrn.but * butInd + offset, scrn.h - scrn.but + offset, size, size);
+	}
+	else
+	{
+		cx.fillRect(scrn.w - scrn.but + offset, scrn.h - scrn.butOff[paused] - scrn.but * (butInd + 1) + offset, size, size);
+	}
+	cx.globalAlpha = 1;
+}
 
 //draws the buttons and game board
 function drawBase()
@@ -206,18 +246,7 @@ function drawBase()
 	//draw buttons: this canvas is not rotated
 	for(var i = 0; i < butts[paused].length; i += 1)
 	{
-		//horizontal buttons
-		if(!buttsFlipped)
-		{
-			cx[BUT_CANV].drawImage(butImg, butts[paused][i].imgInd * butImg.height, 0, butImg.height, butImg.height,
-				scrn.butOff + scrn.but * i, scrn.h - scrn.but, scrn.but, scrn.but);
-		}
-		//vertical buttons
-		else
-		{
-			cx[BUT_CANV].drawImage(butImg, butts[paused][i].imgInd * butImg.height, 0, butImg.height, butImg.height,
-						 scrn.w - scrn.but, scrn.h - scrn.butOff - scrn.but * (i + 1), scrn.but, scrn.but);
-		}
+		drawButton(butImg, cx[BUT_CANV], butts[paused][i].imgInd, i);
 	}
 	
 	
@@ -299,9 +328,11 @@ function drawTarget()
 	//highlight active target
 	if(click.act == SELECT_MOVE && click.delta[0] !== null)
 	{
+		
 		cx[MID].globalAlpha = targetAlpha;
-		cx[MID].fillStyle = 'RGB(255,255,255)';
-		cx[MID].fillRect((player.pos[0] + click.delta[0]) * (scrn.sq) + scrn.sqOff, (player.pos[1] + click.delta[1]) * (scrn.sq) + scrn.sqOff, scrn.sqReduc, scrn.sqReduc);
+		cx[MID].fillStyle = targetColor;
+		//cx[MID].fillRect((player.pos[0] + click.delta[0]) * (scrn.sq) + scrn.sqOff, (player.pos[1] + click.delta[1]) * (scrn.sq) + scrn.sqOff, scrn.sqReduc, scrn.sqReduc);
+		cx[MID].fillRect((player.pos[0] + click.delta[0]) * (scrn.sq), (player.pos[1] + click.delta[1]) * (scrn.sq), scrn.sq, scrn.sq);
 	}
 	cx[MID].globalAlpha = 1;
 	
@@ -367,10 +398,7 @@ function animate()
 	//highlight buttons
 	if((click.act === SELECT_ZOOM && click.but === SELECT_ZOOM_COL[paused]) || (click.act === SELECT_BUT && click.but !== SELECT_ZOOM_COL[paused] && click.but !== null && !butts[paused][click.but].ignore))
 	{
-
-		cx[BUT_SEL_CANV].fillStyle = 'RGB(25,124,247)';
-		if(!buttsFlipped) cx[BUT_SEL_CANV].fillRect(scrn.butOff + scrn.but * click.but, scrn.h - scrn.but, scrn.but, scrn.but);
-		else cx[BUT_SEL_CANV].fillRect(scrn.w - scrn.but, scrn.h -scrn.butOff - scrn.but * (click.but + 1), scrn.but, scrn.but);
+		drawButtonHighlight(cx[BUT_SEL_CANV], click.but,'RGB(25,124,247)' , 1, 1);
 	}
 	
 	//draw player/targets/status
@@ -379,14 +407,15 @@ function animate()
 		//update animated squares
 		for(var i = 0; i < level.animators.length; i += 1)
 		{
-			level.animators[i].time += elapsed;
-			if(level.animators[i].time > level.animators[i].animate.time)
+			var anim = level.animators[i];
+			anim.time += elapsed;
+			if(anim.time > anim.animate.time)
 			{
-				level.animators[i].time = 0;
-				level.animators[i].ind += 1;
-				if(level.animators[i].ind > level.animators[i].animate.maxInd) level.animators[i].ind = level.animators[i].animate.minInd;
+				anim.time = 0;
+				anim.ind += 1;
+				if(anim.ind > anim.animate.maxInd) anim.ind = anim.animate.minInd;
 				
-				drawSquare(level.animators[i].ind_x, level.animators[i].ind_y, level.animators[i].ind);
+				drawSquare(anim.ind_x, anim.ind_y, anim.ind);
 			}
 		}
 		
@@ -397,10 +426,10 @@ function animate()
 		cx[BUT_SEL_CANV].fillStyle = 'rgb(135,135,135)';
 		
 		//horizontal buttons
-		if(!buttsFlipped) cx[BUT_SEL_CANV].fillText("LEVEL " + (level.index + 1), scrn.butOff + scrn.but * (MOVES_DISPLAY + .5), scrn.h - scrn.but + scrn.but * .1);	
+		if(!buttsFlipped) cx[BUT_SEL_CANV].fillText("LEVEL " + (level.index + 1), scrn.butOff[paused] + scrn.but * (MOVES_DISPLAY + .5), scrn.h - scrn.but + scrn.but * .1);	
 		
 		//vertical buttons
-		else cx[BUT_SEL_CANV].fillText("LEVEL " + (level.index + 1),  scrn.w - (.5 * scrn.but), scrn.h -scrn.butOff - scrn.but * (MOVES_DISPLAY + .9));
+		else cx[BUT_SEL_CANV].fillText("LEVEL " + (level.index + 1),  scrn.w - (.5 * scrn.but), scrn.h -scrn.butOff[paused] - scrn.but * (MOVES_DISPLAY + .9));
 		
 		//highlight restart/undo buttons if failed		
 		if(failed())
@@ -408,24 +437,14 @@ function animate()
 			//reset phase if we just failed
 			if(deadLast == false) flashingPhase = 0;
 			else flashingPhase += elapsed;
+			
+			var fade = .7 * Math.abs(Math.sin( 2 * Math.PI * flashingPhase/flashMillis));
+			drawButtonHighlight(cx[BUT_SEL_CANV], UNDO_IND,'RGB(25,124,247)' , fade, .8);
+			drawButtonHighlight(cx[BUT_SEL_CANV], RESTART_IND,'RGB(25,124,247)' , fade, .8);
 
-			cx[BUT_SEL_CANV].fillStyle = 'RGB(25,124,247)';
-			var reduc = scrn.but * .1;
-			var newSz = scrn.but -2 * reduc;
-			cx[BUT_SEL_CANV].globalAlpha = .7 * Math.abs(Math.sin( 2 * Math.PI * flashingPhase/flashMillis));
-			if(!buttsFlipped)
-			{
-				cx[BUT_SEL_CANV].fillRect(scrn.butOff + scrn.but * UNDO_IND + reduc, scrn.h - scrn.but + reduc, scrn.but -2 * reduc, newSz);
-				cx[BUT_SEL_CANV].fillRect(scrn.butOff + scrn.but * RESTART_IND + reduc, scrn.h - scrn.but + reduc, scrn.but -2 * reduc, newSz);
-			}
-			else
-			{
-				cx[BUT_SEL_CANV].fillRect(scrn.w - scrn.but + reduc, scrn.h - scrn.butOff - scrn.but * (UNDO_IND + 1) + reduc, newSz, newSz);
-				cx[BUT_SEL_CANV].fillRect(scrn.w - scrn.but + reduc, scrn.h - scrn.butOff - scrn.but * (RESTART_IND + 1) + reduc, newSz, newSz);
-			}
 			
 			deadLast = true;
-			cx[BUT_SEL_CANV].globalAlpha = 1;
+			//cx[BUT_SEL_CANV].globalAlpha = 1;
 		}
 		else
 		{
@@ -452,25 +471,14 @@ function animate()
 			{
 				if([BURNING, FALLING].includes(player.state)) numberInd = 11;
 				
-				if(!buttsFlipped) cx[BUT_CANV].clearRect(scrn.butOff + scrn.but * MOVES_DISPLAY, scrn.h - scrn.but, scrn.but, scrn.but);
-				else cx[BUT_CANV].clearRect(scrn.w - scrn.but, scrn.h - scrn.butOff - scrn.but * (MOVES_DISPLAY + 1), scrn.but, scrn.but);
+				if(!buttsFlipped) cx[BUT_CANV].clearRect(scrn.butOff[paused] + scrn.but * MOVES_DISPLAY, scrn.h - scrn.but, scrn.but, scrn.but);
+				else cx[BUT_CANV].clearRect(scrn.w - scrn.but, scrn.h - scrn.butOff[paused] - scrn.but * (MOVES_DISPLAY + 1), scrn.but, scrn.but);
 					
 			}
 		}
-		//horizontal buttons
-		if(!buttsFlipped)
-		{
-			cx[cx_ind].drawImage(numbersImg, numberInd * numbersImg.height, 0, numbersImg.height, numbersImg.height,
-				scrn.butOff + scrn.but * MOVES_DISPLAY, scrn.h - scrn.but, scrn.but, scrn.but);
-
-		}
-		//vertical buttons
-		else
-		{
-			cx[cx_ind].drawImage(numbersImg, numberInd * numbersImg.height, 0, numbersImg.height, numbersImg.height,
-				scrn.w - scrn.but, scrn.h - scrn.butOff - scrn.but * (MOVES_DISPLAY + 1), scrn.but, scrn.but);
-		}		
 		
+		drawButton(numbersImg, cx[cx_ind], numberInd, MOVES_DISPLAY);
+
 		//player
 		updatePlayer(elapsed);
 		drawPlayer(elapsed);

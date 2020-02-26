@@ -42,12 +42,13 @@ function getButtonInd()
 	if(click.end[0] > 0 && click.end[0] < scrn.w && click.end[1] > 0 && click.end[1] < scrn.h)
 	{
 		//buttons are vertical: check if x is in the button range
-		if(scrn.butX && click.end[0] > scrn.w - scrn.butX) ret = Math.floor((scrn.h - scrn.butOff - click.end[1])/scrn.but)
+		if(scrn.butX && click.end[0] > scrn.w - scrn.butX) ret = Math.floor((scrn.h - scrn.butOff[paused] - click.end[1])/scrn.but)
 		
 		//buttons are horizontal: check if y is in the button range
-		else if(scrn.butY && click.end[1] > scrn.h - scrn.butY) ret = Math.floor((click.end[0] - scrn.butOff)/scrn.but);
+		else if(scrn.butY && click.end[1] > scrn.h - scrn.butY) ret = Math.floor((click.end[0] - scrn.butOff[paused])/scrn.but);
 		
 		if(ret < 0 || ret > butts[paused].length -1) ret = null;
+		console.log(ret);
 	}
 	return ret;
 }

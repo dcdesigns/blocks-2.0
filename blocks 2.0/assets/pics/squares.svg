@@ -26,17 +26,17 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35355339"
-     inkscape:cx="4470.2737"
-     inkscape:cy="735.48858"
+     inkscape:zoom="0.125"
+     inkscape:cx="4502.7848"
+     inkscape:cy="19.554041"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
      units="px"
-     inkscape:window-width="2560"
-     inkscape:window-height="1377"
+     inkscape:window-width="1536"
+     inkscape:window-height="801"
      inkscape:window-x="-8"
-     inkscape:window-y="-8"
+     inkscape:window-y="514"
      inkscape:window-maximized="1"
      inkscape:snap-global="true" />
   <metadata
@@ -85,7 +85,7 @@
        x="635"
        y="138.24998" />
     <rect
-       style="opacity:0.997;fill:#d5fffe;fill-opacity:1;stroke:none;stroke-width:0.01000002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       style="opacity:0.997;fill:#befffe;fill-opacity:1;stroke:none;stroke-width:0.01000002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
        id="rect113-9-5"
        width="158.75"
        height="158.75"
@@ -233,8 +233,8 @@
        y="206.12865" />
     <g
        id="g1326"
-       transform="matrix(12,0,0,12,-221.72684,-1733.6707)"
-       style="stroke-width:0.91666669;stroke-miterlimit:4;stroke-dasharray:none">
+       transform="matrix(12,0,0,12,-302.46103,-1761.7116)"
+       style="opacity:0.125;stroke-width:0.91666669;stroke-miterlimit:4;stroke-dasharray:none">
       <path
          sodipodi:nodetypes="cssc"
          inkscape:connector-curvature="0"
@@ -439,5 +439,19 @@
        height="158.75"
        x="2857.5"
        y="138.25003" />
+    <rect
+       style="opacity:0.997;fill:#292929;fill-opacity:1;stroke:none;stroke-width:0.01000002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       id="rect113-9-5-7"
+       width="158.75"
+       height="158.75"
+       x="889.74432"
+       y="-253.0901" />
+    <rect
+       style="opacity:0.64600004;fill:#a0ebe7;fill-opacity:1;stroke:none;stroke-width:11;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       id="rect1046"
+       width="52.384827"
+       height="62.86179"
+       x="491.06668"
+       y="-7.1617861" />
   </g>
 </svg>

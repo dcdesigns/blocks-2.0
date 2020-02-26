@@ -8,8 +8,9 @@ const helperLevels = 7;
 const outGap = 7;
 const inGap = 15 + outGap;
 
-const targetAlphaMin = .8;
-const targetAlphaMax = .8;
+const targetAlphaMin = .5;
+const targetAlphaMax = .5;
+const targetColor = 'white';//'RGB(160,235,231)'
 const optionAlphaMin = .15;
 const optionAlphaMax = .6;
 const targetMillis = 3200;

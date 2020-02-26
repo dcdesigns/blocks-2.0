@@ -130,7 +130,7 @@ var userBut = {
  //screen buttons
 var butts = [
 	[scrnButNotFull, restartBut, undoBut, menuBut, movesBut],
-	[scrnButNotFull, prevBut, nextBut, menuBut, userBut]
+	[scrnButNotFull, menuBut, prevBut, nextBut, menuBut, userBut]
 ];
 
 
