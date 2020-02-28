@@ -127,9 +127,18 @@ var userBut = {
 	}
 };
 
+var hintBut = {
+	imgInd: t_ind++,
+	ignore: false,
+	action: function(){
+		
+		
+	}
+};
+
  //screen buttons
 var butts = [
-	[scrnButNotFull, restartBut, undoBut, menuBut, movesBut],
+	[scrnButNotFull, restartBut, undoBut, hintBut, menuBut, movesBut],
 	[scrnButNotFull, menuBut, prevBut, nextBut, menuBut, userBut]
 ];
 

@@ -190,9 +190,9 @@ function endClick(e)
 	{
 		if(!ios)
 		{
-			fullS = !fullS;
+			isFullScreen = !isFullScreen;
 			var elem = document.documentElement;
-			if(fullS)
+			if(isFullScreen)
 			{
 			 
 				if (elem.requestFullscreen) elem.requestFullscreen();
@@ -200,8 +200,8 @@ function endClick(e)
 				else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
 				else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
 				
-				butts[0][0] = scrnButFull;
-				butts[1][0] = scrnButFull;
+				butts[0][SELECT_ZOOM_COL[0]]= scrnButFull;
+				butts[1][SELECT_ZOOM_COL[1]] = scrnButFull;
 			}
 			else
 			{
@@ -210,8 +210,8 @@ function endClick(e)
 				else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
 				else if (document.msExitFullscreen)  document.msExitFullscreen();
 				
-				butts[0][0] = scrnButNotFull;
-				butts[1][0] = scrnButNotFull;
+				butts[0][SELECT_ZOOM_COL[0]] = scrnButNotFull;
+				butts[1][SELECT_ZOOM_COL[1]] = scrnButNotFull;
 			}
 		}
 	}
@@ -231,12 +231,20 @@ function endClick(e)
 		player.target = click.delta;
 		startJump();
 	}
+	killClick(false);
 	
+}
+
+function killClick(force = true)
+{
 	//reset place holders/action status
-	click.but = null;
 	click.delta = [null, null];
 	click.start = [-1,-1];
-	click.act = null;
+	if(force || mobile || click.but == SELECT_MOVE)
+	{
+		click.but = null;
+		click.act = null;
+	}
 }
 
 function getDisplayXY(e)

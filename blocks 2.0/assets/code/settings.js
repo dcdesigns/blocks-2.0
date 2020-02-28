@@ -19,6 +19,8 @@ const flashMillis = 5000;
 const playerMoveRotation = 1;
 const boardBuffer = 0.7;
 
+const idleWaitMillis = 10000;
+
 const maxSquare = 200;
 const maxButton = 200;
 
@@ -38,15 +40,21 @@ const z_vel_init = -.5 * playerMillis * z_accel;
 const z_vel_init_goal = z_vel_init * playerScaleGoalJump/ playerScaleTopJump;
 
 //constant point where player disappears
-const z_min = -80;//-playerJumpHeight/playerScaleTopJump;
+const z_min = -200;//-playerJumpHeight/playerScaleTopJump;
 const playerThickness = 4;
 const playerSize = .5;
-const blockDepth = 45;
+const blockDepth = 90;
+const posRadiusScale = 6;
+const posXYScale = 1;
+const shadowAlpha = .8;
 
 const playerScaleLoadJump = 20;
 const load_z_accel = 4 * z_accel;
 const z_vel_init_load = z_vel_init * 5;//playerScaleLoadJump/ playerScaleTopJump;
 const playerLoadHeight = .95 * (.5 * load_z_accel * Math.pow(playerMillis/2, 2) + z_vel_init_load * (playerMillis/2));
+
+const focusHor = ['inner', .5];
+const focusVert = ['inner', 1.05];
 
 
 //constant rotation speed
@@ -59,6 +67,8 @@ const alpha_ice = 1;
 //constant set to disappear in one cycle
 const opacity_rate_init = .98;
 
+const targetSize = 1.2;
+
 
 //calculated values based on the above settings
 const targetMean = (targetAlphaMin + targetAlphaMax) / 2;
@@ -66,7 +76,8 @@ const targetScale = (targetAlphaMax - targetAlphaMin) * .5;
 const optionMean = (optionAlphaMin + optionAlphaMax) / 2;
 const optionScale = (optionAlphaMax - optionAlphaMin) * .5;
 
-const sqBuffer = .01;
+const imgBuffer = .01;
+const sqBuffer = .05;
 const bridgeBufferScale = 7;
 
 

@@ -9,6 +9,7 @@ var SELECT_ZOOM_COL = [0,0];
 var MOVES_DISPLAY = 0;
 var UNDO_IND = 0;
 var RESTART_IND = 0;
+var HINT_IND = 0;
 var paused = 0;
 
 
@@ -99,14 +100,14 @@ function nextLevel()
 			
 			if(square.animate !== null)
 			{
-				console.log("anim", square.animate);
+				//console.log("anim", square.animate);
 				level.animators.push({ind_x: x, ind_y: y, time: 0, ind: square.animate.minInd, animate: square.animate});
 				
 			}
 		}
 		level.squares.push(row);
 	}
-	console.log(level.animators);
+	//console.log(level.animators);
 	level.drawn = false;
 	player.goalLoops = 0;
 	console.log("made the level: ", level.size, level.squares[0].length, level.squares.length);
@@ -126,6 +127,7 @@ var player = {
 	pos: [2,3],
 	vel: [0,0],
 	target: [0,0], //probably not necessary once changes are in place
+	targetPhase: 0,
 	lastMatchPos: [2,3],
 	history: [],	
 	

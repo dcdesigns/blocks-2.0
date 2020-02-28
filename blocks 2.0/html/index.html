@@ -25,6 +25,7 @@
 	
 	//color indexes
 	var COLOR_BACK= '';
+	var CORLOR_BUTTON_BACK = '';
 	var COLOR_PLAYER_TOP= '';
 	var COLOR_PLAYER_SIDEA= '';
 	var COLOR_PLAYER_SIDEB= '';
@@ -70,7 +71,7 @@
 	const Pi3_2 = Pi_2 * 3;
 
 	var colorsImg, butImg, squareImg, playerImg, numbersImg;
-	var butSrcs =  [
+	var images =  [
 		['blocks/pics/colors.svg', "colorsImg"],
 		['blocks/pics/buttons.svg', "butImg"], 
 		['blocks/pics/squares.svg', "squareImg"],
@@ -94,12 +95,13 @@
 	];
 	
 	//load all scripts and images
-	var imageCnt = butSrcs.length;
+	var imageCnt = images.length;
 	var scriptCnt = scripts.length;
 	var loaded = 0;
 	var toLoad = imageCnt + scriptCnt;
 	var canv = [];
 	var cx = [];
+	var isFullScreen = false;
 	
 	
 	//used to force image/code reload instead of what's cached
@@ -120,9 +122,8 @@
 			document.body.appendChild(script);
 		}
 		if(ind > 0)
-		{
-			++loaded;
-			console.log(loaded);
+		{	
+			//console.log(loaded);
 			if(ind == 1)
 			{
 				WebFont.load(
@@ -130,43 +131,45 @@
 					google: {
 						families: ['Roboto:900']
 					},
-					/* loading: function() {
-						console.log("Fonts are being loaded");
-					},
-					active: function() {
-						console.log("Fonts have been rendered")
-					} */
+					active: function() 
+					{
+						++loaded;
+					}
 				});
+			}
+			else
+			{
+				++loaded;
 			}
 		}
 	}
 	
-	function loadImages(ind)
+	function loadImages()
 	{
-		
-		if(ind < imageCnt)
+		for(var i = 0; i < imageCnt; i += 1)
 		{
 			for ( var v in window ) 
 			{
-				if(v == butSrcs[ind][1]) 
+				if(v == images[i][1]) 
 				{
-					window[butSrcs[ind][1]] = document.createElement("img");
-					window[butSrcs[ind][1]].onload = function(){loadImages(ind + 1)};
-					window[butSrcs[ind][1]].src = butSrcs[ind][0] + rando();
+					window[images[i][1]] = document.createElement("img");
+					window[images[i][1]].onload = function(){++loaded;};
+					window[images[i][1]].src = images[i][0] + rando();
 					break;
 				}
 			}
 		}
-		if(ind > 0) ++loaded;
 	}
-
-			
 
 	//main entry point
 	function startLoading() 
 	{
-		loadImages(0);
+		//these have to be loaded in order due to dependencies
 		loadScripts(0);
+		
+		//these can be loaded whenever
+		loadImages();
+		
 		
 		setTimeout(function () 
 		{
@@ -226,7 +229,7 @@
 		var full = colorsImg.height;
 		var offset = full * (1 - buff);
 		
-		for(var i = 0; i <= 10; i += 1)
+		for(var i = 0; i <= 11; i += 1)
 		{
 			cx[BACK].drawImage(colorsImg, full * i + offset, offset, offset, offset, 0,0,60,60);
 			var imgData = cx[BACK].getImageData(5,5,20,20);
@@ -237,20 +240,21 @@
 				if(j < 2) rgb += ',';
 				else rgb += ')';
 			}
-			console.log(j);
+			//console.log(j);
 			switch(i)
 			{
 				case 0: COLOR_BACK = rgb; break;
-				case 1: COLOR_PLAYER_TOP = rgb; break;
-				case 2: COLOR_PLAYER_SIDEA = rgb; break;
-				case 3: COLOR_PLAYER_SIDEB = rgb; break;
-				case 4: COLOR_BUILDING_SIDEA = rgb; break;
-				case 5: COLOR_BUILDING_SIDEB = rgb; break;
-				case 6: COLOR_BUTTON_HOVER = rgb; break;
-				case 7: COLOR_BUTTON_FLASH = rgb; break;
-				case 8: COLOR_TARGET = rgb; break;
-				case 9: COLOR_TARGET_LINES = rgb; break; 
-				case 10: COLOR_LEVEL_TEXT = rgb; break;
+				case 1: COLOR_BUTTON_BACK = rgb; break;
+				case 2: COLOR_PLAYER_TOP = rgb; break;
+				case 3: COLOR_PLAYER_SIDEA = rgb; break;
+				case 4: COLOR_PLAYER_SIDEB = rgb; break;
+				case 5: COLOR_BUILDING_SIDEA = rgb; break;
+				case 6: COLOR_BUILDING_SIDEB = rgb; break;
+				case 7: COLOR_BUTTON_HOVER = rgb; break;
+				case 8: COLOR_BUTTON_FLASH = rgb; break;
+				case 9: COLOR_TARGET = rgb; break;
+				case 10: COLOR_TARGET_LINES = rgb; break; 
+				case 11: COLOR_LEVEL_TEXT = rgb; break;
 			}
 				
 		}
@@ -284,6 +288,9 @@
 					case restartBut:
 						RESTART_IND = i;
 						break;
+					case hintBut:
+						HINT_IND = i;
+						break;
 				}
 			}
 		}
@@ -299,6 +306,7 @@
 		document.addEventListener("mousedown", startClick);
 		document.addEventListener("mousemove", moveClick);
 		document.addEventListener("mouseup", endClick);
+		document.addEventListener("mouseout", killClick);
 		
 		//keys
 		document.addEventListener('keydown', keyEvent);

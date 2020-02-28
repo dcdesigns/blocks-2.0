@@ -428,7 +428,7 @@
 			
 			for(var i = 0; i < squares.length; i += 1)
 			{
-				cx[FRONT].drawImage(squareImg, (squares[i].imgInd) * squareImg.height + scrn.sqBuffer, scrn.sqBuffer, squareImg.height - 2* scrn.sqBuffer, squareImg.height - 2*scrn.sqBuffer,
+				cx[FRONT].drawImage(squareImg, (squares[i].imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
 				popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + popup.gap, popup.but, popup.but);
 			}
 			
@@ -448,6 +448,7 @@
 	
 	function moveClick(e)
 	{
+		drawScaledLevel(2, cx[FRONT], e.clientX, e.clientY, 200, 200);
 		if(popup.act == null) return
 		
 		if(popup.act == DEFAULT || popup.act == GRID_SQUARE) updatePop(e);
@@ -515,7 +516,7 @@
 function drawSquare(ind_x, ind_y, imgInd, img = squareImg)
 {
 	//cx[MID].clearRect(scrn.sx + ind_x * (scrn.sq), scrn.sy + ind_y * (scrn.sq), scrn.sq, scrn.sq);
-	cx[MID].drawImage(img, (imgInd) * img.height + scrn.sqBuffer, scrn.sqBuffer, img.height - 2* scrn.sqBuffer, img.height - 2*scrn.sqBuffer,
+	cx[MID].drawImage(img, (imgInd) * img.height + scrn.imgBuffer, scrn.imgBuffer, img.height - 2* scrn.imgBuffer, img.height - 2*scrn.imgBuffer,
 		scrn.sx + scrn.sqOff + ind_x * (scrn.sq), scrn.sy + scrn.sqOff + ind_y * (scrn.sq), scrn.sqReduc, scrn.sqReduc);
 }
 	
@@ -532,7 +533,7 @@ function gridChange()
 	scrn.w = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
 	scrn.h= (window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight);
 	scrn.sq = Math.min(maxButton, Math.min((scrn.w - 2 * border) / numX, (scrn.h - buttonHt - 2 * border) / numY));
-	scrn.sqBuffer = sqBuffer * squareImg.height;
+	scrn.imgBuffer = imgBuffer * squareImg.height;
 	scrn.sqReduc = scrn.sq * (1-bordPct);
 	scrn.sqOff = scrn.sq * bordPct/2;
 	scrn.h -= buttonHt;
@@ -561,7 +562,6 @@ function gridChange()
 	cx[MID].clearRect(0,0,scrn.w, scrn.h);
 	cx[FRONT].clearRect(0,0,scrn.w, scrn.h);
 	
-	cx[MID].fillStyle = 'white';
 	for(var x = 0; x < numX; x += 1)
 	{
 		for(var y = 0; y < numY; y += 1)
@@ -574,6 +574,39 @@ function gridChange()
 	drawSquare(player[0], player[1], 0, playerImg);
 	updateSelect();
 }
+
+function drawScaledLevel(levelInd, CX, l, t, w, h)
+{
+	if(levelInd < 0 || levelInd > GAME_LEVELS.length -1) return;
+	
+	var level = GAME_LEVELS[levelInd];
+	var numY = level.map.length;
+	var numX = level.map[0].length;
+	
+
+	
+ 	var sqSize = Math.min(w / numX, h / numY);
+	var actW = sqSize * numX;
+	var actH = sqSize * numY;
+	var sqOff = sqSize * bordPct/2;
+	var sqReduc = sqSize - 2 * sqOff;
+
+	CX.fillStyle = 'black';
+	CX.fillRect(l, t, actW, actH);
+	for(var x = 0; x < numX; x += 1)
+	{
+		for(var y = 0; y < numY; y += 1)
+		{
+			var imgInd = sqCodes[level.map[y][x]].imgInd;
+			CX.drawImage(squareImg, (imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+			l + sqOff + x * sqSize, t + sqOff + y * sqSize, sqReduc, sqReduc);
+		}
+	}
+	CX.fillStyle = 'blue';
+	CX.fillRect(l + (level.player[0] + .3) * sqSize, t + (level.player[1] + .3) * sqSize, sqSize * .4, sqSize * .4);
+}
+	
+	
 
 	
 function levels_to_text()

@@ -35,7 +35,7 @@ var Ice = {
 	animate: null,
 	act:  function()
 	{
-		console.log("ice");
+		//console.log("ice");
 		if(!vectorNonZero(player.vel))
 		{
 			killAll();
@@ -54,7 +54,7 @@ var Portal = {
 		{
 			if(vectorEqual(player.pos, level.portals[0])) targInd = 1;
 			else targInd = 0;
-			console.log("target", targInd);
+			//console.log("target", targInd);
 			player.pos = vectorCopy(level.portals[targInd]);
 			player.lastMatchPos = vectorCopy(player.pos);
 			if(player.jumping) startJump();
