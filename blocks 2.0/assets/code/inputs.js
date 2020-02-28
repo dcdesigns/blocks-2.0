@@ -51,7 +51,7 @@ function screenFlip()
 		rotating = false;
 		landscapeLast = 10000;
 		portraitLast = 10000;
-	}, 1200);
+	}, 800);
 	
 };
 

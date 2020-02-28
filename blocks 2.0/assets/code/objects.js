@@ -211,7 +211,12 @@ function updatePlayer(elapsed)
 	}
 	else
 	{
-		player.z = Math.max(z_min, player.z);
+		if(player.z <= fallLimit)
+		{
+			player.z = fallLimit;
+			killXY();
+			killSpin();
+		}
 	}
 	//update angle
 	var start_omega = player.omega;

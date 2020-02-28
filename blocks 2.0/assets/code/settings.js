@@ -19,10 +19,10 @@ const flashMillis = 5000;
 const playerMoveRotation = 1;
 const boardBuffer = 0.7;
 
-const idleWaitMillis = 10000;
+const idleWaitMillis = 30000;
 
 const maxSquare = 200;
-const maxButton = 200;
+const maxButton = 125;
 
 //how much bigger the player is at jump apex
 const playerScaleTopJump = 2;
@@ -43,19 +43,22 @@ const z_vel_init_goal = z_vel_init * playerScaleGoalJump/ playerScaleTopJump;
 const z_min = -200;//-playerJumpHeight/playerScaleTopJump;
 const playerThickness = 4;
 const playerSize = .5;
-const blockDepth = 90;
+const blockDepth = 130;
 const posRadiusScale = 6;
 const posXYScale = 1;
 const shadowAlpha = .8;
+
+const fallLimit = -blockDepth + playerThickness;
 
 const playerScaleLoadJump = 20;
 const load_z_accel = 4 * z_accel;
 const z_vel_init_load = z_vel_init * 5;//playerScaleLoadJump/ playerScaleTopJump;
 const playerLoadHeight = .95 * (.5 * load_z_accel * Math.pow(playerMillis/2, 2) + z_vel_init_load * (playerMillis/2));
 
+// const focusHor = ['inner', 1.05];
+// const focusVert = ['inner', 1.05];
 const focusHor = ['inner', .5];
-const focusVert = ['inner', 1.05];
-
+const focusVert = ['outer', .2];
 
 //constant rotation speed
 const omega_init = 2 * Math.PI * playerMoveRotation / playerMillis;
@@ -76,8 +79,8 @@ const targetScale = (targetAlphaMax - targetAlphaMin) * .5;
 const optionMean = (optionAlphaMin + optionAlphaMax) / 2;
 const optionScale = (optionAlphaMax - optionAlphaMin) * .5;
 
-const imgBuffer = .01;
-const sqBuffer = .05;
+const imgBuffer = .02;
+const sqBuffer = .07;
 const bridgeBufferScale = 7;
 
 

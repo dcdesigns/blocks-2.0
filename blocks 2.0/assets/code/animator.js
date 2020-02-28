@@ -104,6 +104,7 @@ function reConfigure()
 				butOff.push((scrn.w - butSide * butts[j].length) /2);
 			}
 		}
+		
 		var effX = level.size[0];
 		var effY = level.size[1];
 		if(rotate)
@@ -158,8 +159,6 @@ function reConfigure()
 			scrn.targetSq = scrn.sq * targetSize;
 			scrn.targetOff = (scrn.targetSq - scrn.sq) /2;
 			
-			// scrn.centerX = (level.size[0] / 2) * scrn.sq;
-			// scrn.centerY = (level.size[1] / 2) * scrn.sq;
 			
 			if(!flipped)
 			{
@@ -186,10 +185,26 @@ function reConfigure()
 			scrn.radius = (scrn.sqReduc/2)/(Math.sin(Pi_4));
 			player.radius = (scrn.sqReduc * playerSize/2)/(Math.sin(Pi_4));
 			bridgeBuffer = bridgeBufferScale * scrn.imgBuffer;
+			
+			if(!flipped)
+			{
+				scrn.adjL = - scrn.sx;
+				scrn.adjT = -scrn.sy;
+				scrn.adjW = scrn.w;
+				scrn.adjH = scrn.h;
+			}
+			else 
+			{
+				scrn.adjT = - scrn.sx;
+				scrn.adjL = -scrn.sy;
+				scrn.adjW = scrn.h;
+				scrn.adjH = scrn.w;
+			}
 		}
 
 	}
 	console.log("flipped", flipped);
+	//console.log(butSide);
 	
 	//resize/translate/rotate canvases 
 	for(var i = 0; i < canv.length; i += 1)
@@ -206,6 +221,8 @@ function reConfigure()
 			cx[i].translate(scrn.sx, scrn.sy);
 			cx[i].rotate(-Math.PI/2 * flipped);
 			cx[i].translate(scrn.tx, scrn.ty);
+			
+			
 		}
 	}
 	
@@ -250,6 +267,8 @@ function reConfigure()
 		player.lastMatchPos = vectorCopy(level.playerStart);
 		killXY();
 		level.drawn = true;
+		idleMillis = 0;
+		idleFlash = false;
 	}
 }
 
@@ -265,7 +284,6 @@ function centerRatio(dimension, setting, invert = false)
 		else
 		{
 			return dimension * setting[1];
-			
 		}
 	}
 	else
@@ -278,7 +296,6 @@ function centerRatio(dimension, setting, invert = false)
 		else
 		{
 			return dimension * (1 - setting[1]);
-			
 		}
 	}
 }
@@ -318,7 +335,7 @@ function drawButtonHighlight(cx, butInd, color, alpha, scale = 1)
 	cx.globalAlpha = 1;
 }
 
-function drawBridge(pX, pY, sizeX, sizeY)
+/* function drawBridge(pX, pY, sizeX, sizeY)
 {
 	
 	cx[BASE].drawImage(squareImg, (Ice.imgInd) * squareImg.height + bridgeBuffer, bridgeBuffer, squareImg.height - 2 * bridgeBuffer, squareImg.height - 2 * bridgeBuffer,
@@ -379,14 +396,150 @@ function connectIce()
 		}
 	}
 	cx[BASE].globalAlpha = 1;
+} */
+
+function drawRoads()
+{
+	cx[GROUND].fillStyle = COLOR_ROADS;
+	
+	var height =  - blockDepth;
+	
+	//convert postion to pixels
+	var pos0 = posToPix([0,0]);
+	var pos1 = posToPix([1,0]);
+	
+	var xIndMin = 0;
+	var xIndMax = 0;
+	var yIndMin = 0;
+	var yIndMax = 0;
+	
+	//scale x, y, radius
+	var adj0 = [scrn.centerX + adjust(height, pos0[0] - scrn.centerX, posXYScale), scrn.centerY + adjust(height, pos0[1] - scrn.centerY, posXYScale)];
+	var adj1 = [scrn.centerX + adjust(height, pos1[0] - scrn.centerX, posXYScale), scrn.centerY + adjust(height, pos1[1] - scrn.centerY, posXYScale)];
+	var adjR = adjust(height, scrn.radius, posRadiusScale, 1);	
+	
+	//locate the four corners
+	var pts0 = roundPts(getPoints(adj0[0], adj0[1], adjR, 0));
+	var pts1 = roundPts(getPoints(adj1[0], adj1[1], adjR, 0));
+	
+	var w = (pts1[0][0] - pts0[1][0]);
+	var l = pts0[1][0];
+	var t = pts0[3][1];
+	var gap = pts0[1][0] - pts0[0][0] + w;
+
+	while(l > scrn.adjL)
+	{
+		l -= gap;
+		--xIndMin;
+	}
+	xIndMax = xIndMin;
+	
+	while(l < scrn.adjW + scrn.adjL)
+	{
+		cx[GROUND].fillRect(l-2, scrn.adjT, w + 4, scrn.adjH);
+		l += gap;
+		++xIndMax;
+	}
+	
+	while(t > scrn.adjT)
+	{
+		t -= gap;
+		--yIndMin;
+	}
+	yIndMax = yIndMin;
+	while(t < scrn.adjT + scrn.adjH)
+	{
+		cx[GROUND].fillRect(scrn.adjL, t - 2, scrn.adjW, w + 4);
+		t += gap;
+		++yIndMax;
+	}
+	
+	var xRange = xIndMax - xIndMin;
+	var yRange = yIndMax - yIndMin;
+	
+	console.log(xIndMin, xIndMax, yIndMin, yIndMax);
+	var sorted = [];
+	var dists = [];
+	var used = [];
+	console.log(xRange * yRange);
+	var cnt = xRange * yRange / 4;
+	for(var i = 0; i < cnt; i += 1)
+	{
+		var xInd = Math.round(Math.random() * xRange + xIndMin);
+		var yInd = Math.round(Math.random() * yRange + yIndMin);
+		var depth = Math.random() * (.4* blockDepth);
+		var r1 = depth/(-z_min);
+		var r2 = 1 - r1;
+		var height = -(blockDepth - depth);
+		if((xInd < 0 || xInd > level.size[0] - 1) || (yInd < 0 || yInd > level.size[1] - 1))
+		{
+			var beenUsed = false;
+			for(var u = 0; u < used.length; u += 1)
+			{
+				if(used[u][0] == xInd && used[u][1] == yInd) 
+				{
+					beenUsed = true;
+					break;
+				}
+			}
+			if(beenUsed) continue;
+			
+			var dist = Math.pow(Math.pow(xInd - scrn.centerIndX, 2) + Math.pow(yInd - scrn.centerIndY, 2), .5);
+
+			var j;
+			for(j = 0; j < dists.length; j += 1)
+			{
+				if(dist > dists[j]) break;
+			}
+			sorted.splice(j, 0, [[xInd, yInd], depth]);
+			dists.splice(j, 0, dist);
+			used.push([xInd, yInd]);
+		}
+	}
+	return [sorted, dists];
+	
+	
+
+}
+var backRGB  = [100,100,100];
+var colorVar = 15;
+function RandRGB(gray = false)
+{
+	var RGB = [];
+	var varLeft = colorVar;
+	for(var i = 0; i < 3; i += 1)
+	{
+		//console.log(blend);
+		var del = (- varLeft) + Math.random() * (varLeft) * 2;
+		del = Math.min(del, 255-backRGB[i]);
+		del = Math.max(del, -backRGB[i]);
+		RGB.push(Math.floor(backRGB[i]+del));
+		RGB[i] = Math.floor(RGB[i]);
+		if(gray)
+		{
+			RGB.push(RGB[0]);
+			RGB.push(RGB[0])
+			return RGB;
+		}
+		
+		
+		varLeft -= Math.abs(del);
+	}
+	return RGB;
+}
+
+function arrToRGB(arr)
+{
+	return 'RGB(' + arr[0] + ',' + arr[1] + ',' + arr[2] + ')'; 
 }
 
 //draws the buttons and game board
 function drawBase()
 {
 	//reset and draw a black background
-	cx[BACK].fillStyle = COLOR_BACK;
-	cx[BACK].fillRect(0,0,scrn.w,scrn.h);
+	cx[GROUND].fillStyle = COLOR_BACK;
+	cx[GROUND].fillRect(scrn.adjL, scrn.adjT, scrn.adjW, scrn.adjH);
+	cx[BACK].clearRect(0,0, scrn.w,scrn.h);
 	cx[BUT_CANV].clearRect(0, 0, canv[BASE].width, canv[BASE].height);
 	
 	//horizontal buttons
@@ -402,9 +555,9 @@ function drawBase()
 		drawButton(butImg, cx[BUT_CANV], butts[paused][i].imgInd, i);
 	}
 	
-	
-	var sorted = [];
-	var dists = [];
+	var roads = drawRoads();
+	var sorted = roads[0]
+	var dists = roads[1];
 
 	for(var x = 0; x < level.size[0]; x += 1)
 	{
@@ -419,13 +572,24 @@ function drawBase()
 			{
 				if(dist > dists[i]) break;
 			}
-			sorted.splice(i, 0, [x, y]);
+			sorted.splice(i, 0, [[x, y], blockDepth]);
 			dists.splice(i, 0, dist);
 		}
 	}
 	for(var i = 0; i < sorted.length; i += 1)
 	{
-		draw3DSquare(sorted[i], 0, 0, 0, scrn.radius, scrn.r2, scrn.r1, cx[BUILDINGS], COLOR_BUILDING_SIDEA, COLOR_BUILDING_SIDEA, COLOR_BUILDING_SIDEB, 1, true, true);
+		if(sorted[i][1] < blockDepth)
+		{
+			var top = arrToRGB(RandRGB(true));
+			var A = arrToRGB(RandRGB(true));
+			var B = arrToRGB(RandRGB());
+			draw3DSquare(sorted[i][0], -blockDepth, sorted[i][1], 0, scrn.radius, scrn.r2, scrn.r1, cx[GROUND], top, A, B, 1, true, true);
+			
+		}
+		else
+		{
+			draw3DSquare(sorted[i][0], -blockDepth, sorted[i][1], 0, scrn.radius, scrn.r2, scrn.r1, cx[GROUND], COLOR_BUILDING_TOP, COLOR_BUILDING_SIDEA, COLOR_BUILDING_SIDEB, 1, true, true);
+		}
 	}
 	
 	
@@ -447,8 +611,6 @@ function drawSquare(ind_x, ind_y, imgInd)
 	//cx[BASE].clearRect(ind_x * (scrn.sq), ind_y * (scrn.sq), scrn.sq, scrn.sq);
 	cx[BASE].drawImage(squareImg, (imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
 		scrn.sqOff + scrn.sqBuffer + ind_x * (scrn.sq), scrn.sqOff + scrn.sqBuffer + ind_y * (scrn.sq), scrn.sqReduc - 2 * scrn.sqBuffer, scrn.sqReduc - 2 * scrn.sqBuffer);
-	// cx[BASE].drawImage(squareImg, (imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
-		// scrn.sqOff - scrn.sqBuffer + ind_x * (scrn.sq), scrn.sqOff - scrn.sqBuffer + ind_y * (scrn.sq), scrn.sqReducPlus, scrn.sqReducPlus);
 }
 
 
@@ -648,7 +810,7 @@ function draw3DSquare(p, height, self_height, theta, radius, r2, r1, CX, topColo
 	
 	//scale x, y, radius
 	var adjX = scrn.centerX + adjust(t_height, pixPos[0] - scrn.centerX, posXYScale);
-	var adjY = scrn.centerY + adjust(t_height, pixPos[1] - scrn.centerY, .7);
+	var adjY = scrn.centerY + adjust(t_height, pixPos[1] - scrn.centerY, posXYScale);
 	//console.log(p[0], p[1], pixPos[0], pixPos[1]);
 	var adjR = adjust(t_height, radius, posRadiusScale, 1);	
 	
@@ -657,14 +819,18 @@ function draw3DSquare(p, height, self_height, theta, radius, r2, r1, CX, topColo
 
 	//get and draw the two visible sides
 	var sides = getVisibleSides(theta, pts, sideAColor, sideBColor);
+	var fromBase = t_height - z_min;
+	var r = self_height/(fromBase);
 	for(var i = 0; i < 2; i += 1)
 	{
 		//first two points are on the square itself, second two are calculated based on the object's height size
 		var p1, p2, p3, p4;
 		p1 = sides[i][0][0];
 		p2 = sides[i][0][1];
-		p3 = [p2[0] * r2 + r1 * scrn.centerX, p2[1] * r2 + r1 * scrn.centerY];
-		p4 = [p1[0] * r2 + r1 * scrn.centerX, p1[1] * r2 + r1 * scrn.centerY];
+		// p3 = [p2[0] * r2 + r1 * scrn.centerX, p2[1] * r2 + r1 * scrn.centerY];
+		// p4 = [p1[0] * r2 + r1 * scrn.centerX, p1[1] * r2 + r1 * scrn.centerY];
+		p3 = [p2[0] - r * (p2[0] - scrn.centerX), p2[1] - r * (p2[1] - scrn.centerY)];
+		p4 = [p1[0] - r * (p1[0] - scrn.centerX), p1[1] - r * (p1[1] - scrn.centerY)];
 		
 
 		drawShapeFromPoints([p1,p2,p3,p4], CX, sides[i][1], fadeAlpha, strokeSides);
@@ -760,7 +926,7 @@ function animate()
 	//clear the temp canvases
 	if(lastCX != null)
 	{
-		lastCX.clearRect(-(scrn.sx + 100), -(scrn.sy + 100), scrn.maj + 200, scrn.maj + 200);
+		lastCX.clearRect(scrn.adjL - scrn.but, scrn.adjT - scrn.but, scrn.adjW + 2 * scrn.but, scrn.adjH + 2 * scrn.but);
 	}
 	cx[BUT_SEL_CANV].clearRect(0,0,canv[BUT_SEL_CANV].width, canv[BUT_SEL_CANV].height);
 	

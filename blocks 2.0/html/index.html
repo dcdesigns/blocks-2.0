@@ -14,7 +14,8 @@
 	<canvas id="canv4" style="position: absolute; left: 0; top: 0; z-index: 4;"></canvas>
 	<canvas id="canv5" style="position: absolute; left: 0; top: 0; z-index: 5;"></canvas>
 	<canvas id="canv6" style="position: absolute; left: 0; top: 0; z-index: 6;"></canvas>
-	<canvas id="canv7" oncontextmenu="return false;" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>	
+	<canvas id="canv7" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>
+	<canvas id="canv8" oncontextmenu="return false;" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>	
 </div>
 
 <script>
@@ -31,21 +32,24 @@
 	var COLOR_PLAYER_SIDEB= '';
 	var COLOR_BUILDING_SIDEA= '';
 	var COLOR_BUILDING_SIDEB= '';
+	var COLOR_BUILDING_TOP= '';
 	var COLOR_BUTTON_HOVER= '';
 	var COLOR_BUTTON_FLASH= '';
 	var COLOR_TARGET= '';
 	var COLOR_TARGET_LINES= '';
 	var COLOR_LEVEL_TEXT= '';
+	var COLOR_ROADS= '';
 	
 	//enums
-	const BACK = 0;
-	const BELOW_ALL = 1;
-	const BUILDINGS = 2;
-	const BELOW_BASE = 3;
-	const BASE = 4;
-	const BUT_SEL_CANV = 5;
-	const ABOVE_BASE = 6;
-	const BUT_CANV = 7;
+	const GROUND = 0;
+	const BACK = 1;
+	const BELOW_ALL = 2;
+	const BUILDINGS = 3;
+	const BELOW_BASE = 4;
+	const BASE = 5;
+	const BUT_SEL_CANV = 6;
+	const ABOVE_BASE = 7;
+	const BUT_CANV = 8;
 
 	const CLICK_START = 0;
 	const CLICK_MOVE = 1;
@@ -204,12 +208,12 @@
 		var r_w = Math.min(800, w - 2 * 50);
 		
 		//draw loading bar
-		cx[BACK].fillStyle = color_load_back;
-		cx[BACK].fillRect(0, 0, w, h);
-		cx[BACK].fillStyle = color_load_base;
-		cx[BACK].fillRect((w - r_w)/2, (h - r_h)/2, r_w, r_h);
-		cx[BACK].fillStyle = color_load_bar;
-		cx[BACK].fillRect((w - r_w)/2, (h - r_h)/2, r_w * loaded/toLoad, r_h);
+		cx[GROUND].fillStyle = color_load_back;
+		cx[GROUND].fillRect(0, 0, w, h);
+		cx[GROUND].fillStyle = color_load_base;
+		cx[GROUND].fillRect((w - r_w)/2, (h - r_h)/2, r_w, r_h);
+		cx[GROUND].fillStyle = color_load_bar;
+		cx[GROUND].fillRect((w - r_w)/2, (h - r_h)/2, r_w * loaded/toLoad, r_h);
 		
 		//next loop
 		if(loaded < toLoad)
@@ -229,10 +233,10 @@
 		var full = colorsImg.height;
 		var offset = full * (1 - buff);
 		
-		for(var i = 0; i <= 11; i += 1)
+		for(var i = 0; i <= 13; i += 1)
 		{
-			cx[BACK].drawImage(colorsImg, full * i + offset, offset, offset, offset, 0,0,60,60);
-			var imgData = cx[BACK].getImageData(5,5,20,20);
+			cx[GROUND].drawImage(colorsImg, full * i + offset, offset, offset, offset, 0,0,60,60);
+			var imgData = cx[GROUND].getImageData(5,5,20,20);
 			var rgb = 'rgb(';
 			for(j = 0; j < 3; j += 1)
 			{
@@ -255,6 +259,8 @@
 				case 9: COLOR_TARGET = rgb; break;
 				case 10: COLOR_TARGET_LINES = rgb; break; 
 				case 11: COLOR_LEVEL_TEXT = rgb; break;
+				case 12: COLOR_BUILDING_TOP = rgb; break;
+				case 13: COLOR_ROADS = rgb; break;
 			}
 				
 		}

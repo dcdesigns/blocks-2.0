@@ -139,7 +139,7 @@ var hintBut = {
  //screen buttons
 var butts = [
 	[scrnButNotFull, restartBut, undoBut, hintBut, menuBut, movesBut],
-	[scrnButNotFull, menuBut, prevBut, nextBut, menuBut, userBut]
+	[scrnButNotFull, prevBut, nextBut, menuBut, userBut]
 ];
 
 
