@@ -1,6 +1,7 @@
 var Grass = {
 	imgInd: 0,
 	animate: null,
+	sound: grassSnd,
 	act: function()
 	{
 		killAll();
@@ -10,6 +11,7 @@ var Grass = {
 var Goal = {
 	imgInd:  1,
 	animate: null,
+	sound: winSnd,
 	act:  function()
 	{
 		killXY();
@@ -33,6 +35,7 @@ var Goal = {
 var Ice = {
 	imgInd:  5,
 	animate: null,
+	sound: iceSnd,
 	act:  function()
 	{
 		//console.log("ice");
@@ -74,6 +77,7 @@ var Boost = {
 var EmptySquare = {
 	imgInd:  2,
 	animate: null,
+	sound: fallSnd,
 	act:  function()
 	{
 		killXY();
@@ -86,6 +90,7 @@ var EmptySquare = {
 var TrampReg = {
 	imgInd:  12,
 	animate: null,
+	sound: trampSnd,
 	act:  function()
 	{
 		startJump();
@@ -96,6 +101,7 @@ var TrampReg = {
 var TrampHor = {
 	imgInd:  13,
 	animate: null,
+	sound: trampSnd,
 	act:  function()
 	{
 		//player.z_vel = z_vel_init;
@@ -107,6 +113,7 @@ var TrampHor = {
 var TrampVrt = {
 	imgInd:  14,
 	animate: null,
+	sound: trampSnd,
 	act:  function()
 	{
 		//player.z_vel = z_vel_init;
@@ -118,6 +125,7 @@ var TrampVrt = {
 var TrampDDn = {
 	imgInd:  15,
 	animate: null,
+	sound: trampSnd,
 	act:  function()
 	{
 		//player.z_vel = z_vel_init;
@@ -129,6 +137,7 @@ var TrampDDn = {
 var TrampDUp = {
 	imgInd:  16,
 	animate: null,
+	sound: trampSnd,
 	act:  function()
 	{
 		//player.z_vel = z_vel_init;
@@ -140,6 +149,7 @@ var TrampDUp = {
 var TrampClockwise = {
 	imgInd:  17,
 	animate: null,//{time: 400, minInd: 17, maxInd: 24},
+	sound: trampSnd,
 	act:  function()
 	{
 		player.vel = [player.vel[1], -player.vel[0]];
@@ -150,6 +160,7 @@ var TrampClockwise = {
 var TrampCounterClockwise = {
 	imgInd:  18,
 	animate: null,//{time: TrampClockwise.animate.time, minInd: 25, maxInd: 32},
+	sound: trampSnd,
 	act:  function()
 	{
 		player.vel = [-player.vel[1], player.vel[0]];
@@ -160,6 +171,7 @@ var TrampCounterClockwise = {
 var Lava = {
 	imgInd:  3,
 	animate: null, //{time: 500, minInd: 2, maxInd: 4},
+	sound: lavaSnd,
 	act:  function()
 	{
 		killXY();

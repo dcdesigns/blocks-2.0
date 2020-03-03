@@ -175,9 +175,18 @@ var click = {
 
 function setSquareAction()
 {
+	
 	if(onBoard(player.pos))
 	{
-		level.squares[player.pos[1]][player.pos[0]].act();
+		var sq = level.squares[player.pos[1]][player.pos[0]];
+		if(ALLOW_SOUND)
+		{
+			//iceSnd.stop();
+			if(sq.sound != null && player.state == ACTIVE) allSounds.start(sq.sound);
+			//sq.sound.play();
+		}
+		sq.act();
+		
 	}
 	else
 	{
@@ -215,6 +224,12 @@ function updatePlayer(elapsed)
 		{
 			player.state = FALLING;
 			startFade(opacity_rate_fall);
+			if(ALLOW_SOUND)
+			{
+				/* iceSnd.stop();
+				fallSnd.play(); */
+				allSounds.start(fallSnd);
+			}
 		}
 		
 		//update z
@@ -271,8 +286,24 @@ function updatePlayer(elapsed)
 				player.pos = roundVector(player.pos);
 				if(on_board)
 				{
-					if(player.history.length) setSquareAction();
-					else killAll();
+					if(player.history.length) 
+					{
+						var old = level.squares[player.lastMatchPos[1]][player.lastMatchPos[0]];
+						var sq = level.squares[player.pos[1]][player.pos[0]];
+						if(old !== sq || sq !== Ice)
+						{
+							setSquareAction();
+						}
+					}
+					else
+					{
+						if(ALLOW_SOUND)
+						{
+							allSounds.start(grassSnd);
+							//grassSnd.play();
+						}
+						killAll();
+					}
 					player.lastMatchPos = vectorCopy(player.pos);
 					
 				}

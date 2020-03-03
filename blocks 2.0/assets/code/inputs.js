@@ -8,12 +8,14 @@ function keyEvent(event)
 		case 83:
 			level.index = -1;
 			gameOver = false;
+			allSounds.start(swoopSnd);
 			killAll();
 			nextLevel();
 			break;
 		//e
 		case 69:
 			gameOver = false;
+			allSounds.start(swoopSnd);
 			killAll();
 			level.index = GAME_LEVELS.length - 2;
 			nextLevel();
@@ -21,6 +23,7 @@ function keyEvent(event)
 		//n
 		case 78:
 			gameOver = false;
+			allSounds.start(swoopSnd);
 			killAll();
 			nextLevel();
 			break;
@@ -28,6 +31,7 @@ function keyEvent(event)
 		case 80:
 			level.index = Math.max(-1, level.index - 2);
 			gameOver = false;
+			allSounds.start(swoopSnd);
 			killAll();
 			nextLevel();
 			break;
@@ -226,6 +230,11 @@ function endClick(e)
 	//targets
 	else if(click.act === SELECT_MOVE && click.delta[0] !== null && player.state == IDLE && !outOfMoves()) //&& not dead and moves left and blah blah
 	{
+		if(ALLOW_SOUND)
+		{
+			//jumpSnd.play();
+			allSounds.start(jumpSnd);
+		}
 		player.history.push(vectorCopy(player.pos));
 		player.lastMatchPos = vectorCopy(player.pos);
 		player.target = click.delta;

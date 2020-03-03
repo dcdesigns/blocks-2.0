@@ -64,6 +64,12 @@ var restartBut = {
 			
 			//player.state = IDLE;
 			player.state = REWIND;
+			if(ALLOW_SOUND)
+			{
+				/* iceSnd.stop();
+				swoopSnd.play(); */
+				allSounds.start(swoopSnd);
+			}
 			gameOver = false;
 			player.rewindPos = player.history[0];
 			player.history = [];
@@ -84,6 +90,12 @@ var undoBut = {
 			
 			//player.state = IDLE;
 			player.state = REWIND;
+			if(ALLOW_SOUND)
+			{
+				/* iceSnd.stop();
+				swoopSnd.play(); */
+				allSounds.start(swoopSnd);
+			}
 			gameOver = false;
 			player.rewindPos = player.history.pop();
 			player.lastMatchPos = vectorCopy(player.pos);

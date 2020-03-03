@@ -19,6 +19,10 @@
 </div>
 
 <script>
+	var ALLOW_SOUND = 1;
+	var has_sound = false;
+	const sound_fail = 7000;
+	
 	//loading bar colors: defined here because the color image isn't loaded yet
 	const color_load_back = 'black';
 	const color_load_base = 'gray';
@@ -84,7 +88,43 @@
 		['blocks/pics/numbers.svg', "numbersImg"]
 	];
 	
+	var allSounds;
+	var jumpSnd = 0;
+	var lavaSnd = 1;
+	var trampSnd = 2;
+	var grassSnd = 3;
+	var iceSnd = 4;
+	var swoopSnd = 5;
+	var fallSnd = 6;
+	var winSnd = 7;
+	
+	var soundFile = 'blocks/audio/gameSounds.mp3';
+	var soundOrder = [
+		[trampSnd, 1], 
+		[fallSnd, 1],
+		[grassSnd, .5],
+		[jumpSnd, .5],
+		[swoopSnd, .5],
+		[lavaSnd, 2],
+		[iceSnd, 9],
+		[winSnd, 3],
+	];
 
+	
+	
+					
+	
+		
+/* 	var sounds = [
+		['blocks/audio/jump.mp3', 'jumpSnd'],
+		['blocks/audio/sizzle.mp3', 'lavaSnd'],
+		['blocks/audio/bounce.mp3', 'trampSnd'],
+		['blocks/audio/grass.mp3', 'grassSnd'],
+		['blocks/audio/ice.mp3', 'iceSnd'],
+		['blocks/audio/swoop.mp3', 'swoopSnd'],
+		['blocks/audio/fall.mp3', 'fallSnd'],
+	];
+ */
 	
 	//define script files
 	var scripts = [
@@ -102,12 +142,13 @@
 	//load all scripts and images
 	var imageCnt = images.length;
 	var scriptCnt = scripts.length;
+	var soundCnt = (ALLOW_SOUND) ? 1 : 0;//sounds.length;
 	var loaded = 0;
-	var toLoad = imageCnt + scriptCnt;
+	var toLoad = imageCnt + scriptCnt + soundCnt;
 	var canv = [];
 	var cx = [];
 	var isFullScreen = false;
-	
+	var soundsTriggered = false;
 	
 	//used to force image/code reload instead of what's cached
 	//todo: might be a better way of doing this that doesn't swamp the cache
@@ -165,16 +206,76 @@
 			}
 		}
 	}
+	
+
+	var timey;
+	function loadSounds()
+	{
+		allSounds = document.createElement("audio");
+		allSounds.onloadeddata = function()
+		{
+			++loaded;
+			has_sound = true;
+			console.log("sound");
+		};
+		allSounds.setAttribute("preload", "auto");
+		allSounds.setAttribute("controls", "none");
+		allSounds.style.display = "none";
+		allSounds.src = soundFile + rando();
+		
+		
+		allSounds.start = function(snd)
+		{
+			//allSounds.pause();
+			var strt = 0;
+			for(var i = 0; i < soundOrder.length; i += 1)
+			{
+				if(soundOrder[i][0] == snd)
+				{
+					allSounds.currentTime = strt;
+					var len = soundOrder[i][1] * 1000;
+					allSounds.play();
+					clearTimeout(timey);
+					timey = setTimeout(function(oldInd)
+					{
+						allSounds.pause();
+					}, len);
+					break;
+				}
+				else
+				{
+					strt += soundOrder[i][1];
+				}
+			}
+		};
+	}
+	
+	function triggerSounds()
+	{
+		ALLOW_SOUND = 0;
+		--toLoad;
+		
+		/* allSounds.play();
+		allSounds.pause(); */
+		document.removeEventListener("touchstart", triggerSounds);
+	}
 
 	//main entry point
 	function startLoading() 
 	{
+	
+		
 		//these have to be loaded in order due to dependencies
 		setTimeout(function (){ loadScripts(0);}, 10);
 		
 		
 		//these can be loaded whenever
 		setTimeout(function () { loadImages();}, 10);
+		if(ALLOW_SOUND)
+		{
+			setTimeout(function () { loadSounds();}, 10);
+			document.addEventListener("touchstart", triggerSounds);
+		}
 		
 		
 		setTimeout(function () 
@@ -198,6 +299,7 @@
 		}, 300);
 	}
 	
+	var began = new Date().getTime();
 	//draws a loading status bar
 	function animateLoading(w, h, r_w, r_h)
 	{
@@ -206,8 +308,9 @@
 		if(canv[0].width != w) canv[0].width = w;
 		if(canv[0].height != h) canv[0].height = h;
 		
-		var r_h = Math.min(200, h - 2 * 50);
+		
 		var r_w = Math.min(800, w - 2 * 50);
+		var r_h = Math.min(200, w/5, h - 2 * 50);
 		
 		//draw loading bar
 		cx[GROUND].fillStyle = color_load_back;
@@ -217,6 +320,14 @@
 		cx[GROUND].fillStyle = color_load_bar;
 		cx[GROUND].fillRect((w - r_w)/2, (h - r_h)/2, r_w * loaded/toLoad, r_h);
 		
+		var elapsed = new Date().getTime() - began;
+		if(!has_sound, elapsed > sound_fail && ALLOW_SOUND)
+		{
+			ALLOW_SOUND = 0;
+			--toLoad;
+			document.removeEventListener("touchstart", triggerSounds);
+		}
+
 		//next loop
 		if(loaded < toLoad)
 		{
