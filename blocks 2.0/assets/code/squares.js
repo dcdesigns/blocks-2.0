@@ -78,6 +78,7 @@ var EmptySquare = {
 	{
 		killXY();
 		player.state = FALLING;
+		startFade(opacity_rate_fall);
 		//startFade();
 	}
 };

@@ -47,6 +47,7 @@ const blockDepth = 130;
 const posRadiusScale = 6;
 const posXYScale = 1;
 const shadowAlpha = .8;
+const playerNegRScale = 6;
 
 const fallLimit = -blockDepth + playerThickness;
 
@@ -69,6 +70,7 @@ const alpha_slow = .9;
 const alpha_ice = 1;
 //constant set to disappear in one cycle
 const opacity_rate_init = .98;
+const opacity_rate_fall = .89;
 
 const targetSize = 1.2;
 
@@ -82,6 +84,9 @@ const optionScale = (optionAlphaMax - optionAlphaMin) * .5;
 const imgBuffer = .02;
 const sqBuffer = .07;
 const bridgeBufferScale = 7;
+
+const rewindRate = .13;
+const closeLimit = .03;
 
 
 

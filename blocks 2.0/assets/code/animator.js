@@ -19,6 +19,7 @@ var bridgeBuffer = 1;
 var lastCX = null;
 var idleMillis = 0;
 var idleFlash = false;
+var hintActive = false;
 
 function posToPix(pos)
 {
@@ -471,7 +472,7 @@ function drawRoads()
 		var r1 = depth/(-z_min);
 		var r2 = 1 - r1;
 		var height = -(blockDepth - depth);
-		if((xInd < 0 || xInd > level.size[0] - 1) || (yInd < 0 || yInd > level.size[1] - 1))
+		if((xInd < 0 || xInd > level.size[0] - 1) || (yInd < 0 || yInd > level.size[1] - 1) || level.squares[yInd][xInd] == EmptySquare)
 		{
 			var beenUsed = false;
 			for(var u = 0; u < used.length; u += 1)
@@ -617,7 +618,7 @@ function drawSquare(ind_x, ind_y, imgInd)
 function drawTarget()
 {
 	var CX = cx[ABOVE_BASE];	
-	if(level.index < helperLevels || (click.act == SELECT_BUT && click.but == HINT_IND))
+	if(level.index < helperLevels || hintActive)
 	{
 		//create target lines emanating from the player
 		CX.beginPath();
@@ -800,7 +801,7 @@ function posToPix(pos)
 }
 
 
-function draw3DSquare(p, height, self_height, theta, radius, r2, r1, CX, topColor, sideAColor, sideBColor, fadeAlpha, strokeTop, strokeSides)
+function draw3DSquare(p, height, self_height, theta, radius, r2, r1, CX, topColor, sideAColor, sideBColor, fadeAlpha, strokeTop, strokeSides, negRScale = 1)
 {
 	if(height <= z_min) return;
 	
@@ -812,7 +813,8 @@ function draw3DSquare(p, height, self_height, theta, radius, r2, r1, CX, topColo
 	var adjX = scrn.centerX + adjust(t_height, pixPos[0] - scrn.centerX, posXYScale);
 	var adjY = scrn.centerY + adjust(t_height, pixPos[1] - scrn.centerY, posXYScale);
 	//console.log(p[0], p[1], pixPos[0], pixPos[1]);
-	var adjR = adjust(t_height, radius, posRadiusScale, 1);	
+
+	var adjR = adjust(t_height, radius, posRadiusScale, negRScale);	
 	
 	//locate the four corners
 	var pts = roundPts(getPoints(adjX, adjY, adjR, theta));
@@ -885,27 +887,6 @@ function animate()
 	player.targetPhase += elapsed;
 	var sinVal = Math.sin( 2 * Math.PI * player.targetPhase/targetMillis);
 	targetAlpha = targetMean + targetScale * sinVal;
-	if(player.state == IDLE)
-	{
-		if(!wasIdle) 
-		{
-			player.targetPhase = 0;
-			wasIdle = true;
-		}
-	}
-	else wasIdle = false;
-	
-	if(click.act == SELECT_BUT && click.but == HINT_IND)
-	{
-		if(!wasHint) 
-		{
-			player.targetPhase = 0;
-			wasHint = true;
-		}
-	}
-	else wasHint = false;
-	
-	optionAlpha = 2* (player.targetPhase % targetMillis) / targetMillis;
 	
 	
 	//check for screen changes and redraw if necessary	
@@ -967,40 +948,47 @@ function animate()
 		//vertical buttons
 		else cx[BUT_SEL_CANV].fillText("LEVEL " + (level.index + 1),  scrn.w - (.5 * scrn.but), scrn.h -scrn.butOff[paused] - scrn.but * (MOVES_DISPLAY + .9));
 		
+		flashingPhase += elapsed;
+		var fade = .7 * Math.abs(Math.sin( 2 * Math.PI * flashingPhase/flashMillis));
+		
 		//highlight restart/undo buttons if failed		
 		if(failed())
-		{
-			//reset phase if we just failed
-			if(deadLast == false) flashingPhase = 0;
-			else flashingPhase += elapsed;
-			
-			var fade = .7 * Math.abs(Math.sin( 2 * Math.PI * flashingPhase/flashMillis));
+		{	
 			drawButtonHighlight(cx[BUT_SEL_CANV], UNDO_IND, COLOR_BUTTON_FLASH , fade, .8);
 			drawButtonHighlight(cx[BUT_SEL_CANV], RESTART_IND, COLOR_BUTTON_FLASH , fade, .8);
-
+			if(flashingPhase < flashMillis/2 && outOfMoves()) drawButtonHighlight(cx[BUT_SEL_CANV], MOVES_DISPLAY, COLOR_BUTTON_FLASH , fade, 1.005);
+		}
+		else if(player.state == IDLE && player.history.length && vectorEqual(player.history[player.history.length - 1], player.pos))
+		{
 			
-			deadLast = true;
-			//cx[BUT_SEL_CANV].globalAlpha = 1;
+			drawButtonHighlight(cx[BUT_SEL_CANV], UNDO_IND, COLOR_BUTTON_FLASH , fade, .8);
+			if(flashingPhase < flashMillis/2) drawButtonHighlight(cx[BUT_SEL_CANV], MOVES_DISPLAY, COLOR_BUTTON_FLASH , fade, 1.005);
 		}
 		else
 		{
-			deadLast = false;
-		}
+			flashingPhase = 0;
+		}	
 		
+		//highlight hint button after idle timeout
 		if(player.state == IDLE && level.index >= helperLevels)
 		{
 			idleMillis += elapsed;
-			if(click.act === SELECT_BUT && click.but == HINT_IND)
-			{
-				idleFlash = false;
-				idleMillis = 0;
-			}
 			
-			if(idleMillis > idleWaitMillis && !idleFlash)
+			//look for flash trigger (idle timeout or hint button)
+			if(!idleFlash && idleMillis > idleWaitMillis)
 			{
 				idleFlash = true;
 				idleMillis = 0;
 			}
+			
+			//look for flash end (finished cycle and hint button not active
+			if(idleFlash && idleMillis > flashMillis)
+			{
+				idleFlash = false;
+				idleMillis = 0;
+			}
+
+			
 			if(idleFlash)
 			{
 				var fade = .7 * Math.abs(Math.sin( 2 * Math.PI * idleMillis/flashMillis));
@@ -1014,11 +1002,32 @@ function animate()
 			idleFlash = false;
 		}
 		
-		
-		//highlight targets
-		if(playerIdle()) // && click.delta[0] !== null)
+		if(player.state == IDLE)
 		{
+			
+			//look for ON trigger
+			if(!hintActive && (click.act == SELECT_BUT && click.but == HINT_IND))
+			{
+				
+				hintActive = true;
+			}
+
+			//look for OFF trigger
+			if(hintActive && player.targetPhase > targetMillis)
+			{
+				hintActive = false;
+				idleFlash = false;
+				idleMillis = 0;
+			}
+			
+			optionAlpha = 2* (player.targetPhase % targetMillis) / targetMillis;
 			drawTarget();
+		
+		}
+		else
+		{
+			player.targetPhase = 0;
+			hintActive = false;
 		}
 		
 		//draw moves counter
@@ -1047,11 +1056,11 @@ function animate()
 		updatePlayer(elapsed);
 		//drawPlayer(elapsed);
 		
-		var CX = (player.z >= 0) ? cx[ABOVE_BASE] : (player.z > -blockDepth) ? cx[BELOW_BASE] : cx[BELOW_ALL];
+		var CX = (player.z > -playerThickness) ? cx[ABOVE_BASE] : (player.z > -blockDepth) ? cx[BELOW_BASE] : cx[BELOW_ALL];
 		lastCX = CX;
 		
-		if(player.opacity == 1) drawShadow(player.pos, player.z, player.theta, player.radius, CX, 'black', shadowAlpha);
-		draw3DSquare(player.pos, player.z, playerThickness, player.theta, player.radius, player.r2, player.r1,CX, COLOR_PLAYER_TOP, COLOR_PLAYER_SIDEA, COLOR_PLAYER_SIDEB, player.opacity, false, false);
+		if(player.opacity == 1 && player.state !== FALLING) drawShadow(player.pos, player.z, player.theta, player.radius, CX, 'black', shadowAlpha);
+		draw3DSquare(player.pos, player.z, playerThickness, player.theta, player.radius, player.r2, player.r1,CX, COLOR_PLAYER_TOP, COLOR_PLAYER_SIDEA, COLOR_PLAYER_SIDEB, player.opacity, false, false, playerNegRScale);
 	}
 	
 	

@@ -58,13 +58,14 @@ var restartBut = {
 	ignore: false,
 	action: function(){
 		
-		killAll();
+		//killAll();
 		if(player.history.length)
 		{
 			
-			player.state = IDLE;
+			//player.state = IDLE;
+			player.state = REWIND;
 			gameOver = false;
-			player.pos = player.history[0];
+			player.rewindPos = player.history[0];
 			player.history = [];
 			player.lastMatchPos = vectorCopy(player.pos);
 		}
@@ -77,13 +78,14 @@ var undoBut = {
 	ignore: false,
 	action: function(){
 		
-		killAll();
+		//killAll();
 		if(player.history.length)
 		{
 			
-			player.state = IDLE;
+			//player.state = IDLE;
+			player.state = REWIND;
 			gameOver = false;
-			player.pos = player.history.pop();
+			player.rewindPos = player.history.pop();
 			player.lastMatchPos = vectorCopy(player.pos);
 		}
 	}

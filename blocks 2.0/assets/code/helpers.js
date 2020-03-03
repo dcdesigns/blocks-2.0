@@ -39,6 +39,8 @@ function vectorEqual(v1, v2, threshold = 0.1)
 	return true;
 }
 
+
+
 function vectorNonZero(v)
 {
 	for(i = 0; i < v.length; i += 1)

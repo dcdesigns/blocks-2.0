@@ -5,6 +5,33 @@
 
 <body>
 
+<script>
+	//enums
+	const BACK = 0;
+	const MID_SELECT = 1;
+	const MID = 2;
+	const FRONT_SELECT = 3
+	const FRONT = 4;
+	
+	const OVERWRITE = 0;
+	const ADD_AFTER = 1;
+	const ADD_BEFORE = 2;
+	const ADD_END = 3;
+	const canv_cnt = FRONT + 1;
+	
+	const DEFAULT = 1;
+	const GRID_SQUARE = 2;
+	const GRID_SELECT = 3;
+	
+	const CLICK_START = 0;
+	const CLICK_MOVE = 1;
+	const CLICK_END = 2;
+	
+	const MENU = 0;
+	const DESIGN = 1;
+</script>
+
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
 <div id="canvDiv" class="unselectable" style="position:absolute; left: 0, top: 0;">
@@ -17,8 +44,12 @@
 <div id="toolDiv" class="unselectable" style="position:absolute; left: 0, top: 0;">
 	grid:  <select id="numXbut" oninput = "gridChange();"> </select> x <select id="numYbut" oninput = "gridChange();"> </select>
 	moves limit <input type="number" id="moves" min="1" max="20" value = "1">
-	<button type="button" id= "save" onclick = "add_level(0);" >add_save</button>
-	<button type="button" id= "save_replace" onclick = "add_level(1);" >overwrite_save</button>
+	<button type="button" id= "overwrite" onclick = "add_level(OVERWRITE);" >overwrite</button>
+	<button type="button" id= "add_before" onclick = "add_level(ADD_BEFORE);" >add before</button>
+	<button type="button" id= "add_after" onclick = "add_level(ADD_AFTER);" >add after</button>
+	<button type="button" id= "add_end" onclick = "add_level(ADD_END);" >add to end</button>
+	<button type="button" id= "menu" onclick = "open_menu();" > levels menu</button>
+	<button type="button" id= "sync" onclick = "sync();" > sync changes</button>
 </div>
 
 
@@ -29,22 +60,26 @@
 	const border = 20;
 	const extra = 3;
 
-	//enums
-	const BACK = 0;
-	const MID_SELECT = 1;
-	const MID = 2;
-	const FRONT_SELECT = 3
-	const FRONT = 4;
+	var view = MENU;
+	var unsaved = false;
+	var unsynced = false;
+	var syncBut = document.getElementById("sync");
+	syncBut.style.color = 'black';
+	console.log(syncBut);
+	syncBut.disabled = true;
 	
-	const canv_cnt = FRONT + 1;
+	var menu = {
+		columns: 1,
+		rows: 1,
+		colWidth: 1,
+		rowHeight: 1,
+		row: 0,
+		col: 0,
+		startRow: -1,
+		startCol: -1,
+		menuMoved: false
+	};
 	
-	const DEFAULT = 1;
-	const GRID_SQUARE = 2;
-	const GRID_SELECT = 3;
-	
-	const CLICK_START = 0;
-	const CLICK_MOVE = 1;
-	const CLICK_END = 2;
 
 	var popup = {
 		act: null,
@@ -62,7 +97,9 @@
 	
 	var scrn = {};
 	var squareImg, playerImg;
-	var butSrcs =  [
+
+	
+	var images =  [
 		['blocks/pics/squares.svg', "squareImg"],
 		['blocks/pics/player.svg', "playerImg"],
 	];
@@ -78,7 +115,7 @@
 	];
 	
 	//load all scripts and images
-	var imageCnt = butSrcs.length;
+	var imageCnt = images.length;
 	var scriptCnt = scripts.length;
 	var loaded = 0;
 	var toLoad = imageCnt + scriptCnt;
@@ -139,8 +176,7 @@
 		}
 		if(ind > 0)
 		{
-			++loaded;
-			console.log(loaded);
+			//console.log(loaded);
 			if(ind == 1)
 			{
 				WebFont.load(
@@ -148,34 +184,35 @@
 					google: {
 						families: ['Roboto:900']
 					},
-					/* loading: function() {
-						console.log("Fonts are being loaded");
-					},
-					active: function() {
-						console.log("Fonts have been rendered")
-					} */
+					active: function() 
+					{
+						++loaded;
+					}
 				});
+			}
+			else
+			{
+				++loaded;
 			}
 		}
 	}
+
 	
-	function loadImages(ind)
+	function loadImages()
 	{
-		
-		if(ind < imageCnt)
+		for(var i = 0; i < imageCnt; i += 1)
 		{
 			for ( var v in window ) 
 			{
-				if(v == butSrcs[ind][1]) 
+				if(v == images[i][1]) 
 				{
-					window[butSrcs[ind][1]] = document.createElement("img");
-					window[butSrcs[ind][1]].onload = function(){loadImages(ind + 1)};
-					window[butSrcs[ind][1]].src = butSrcs[ind][0] + rando();
+					window[images[i][1]] = document.createElement("img");
+					window[images[i][1]].onload = function(){++loaded;};
+					window[images[i][1]].src = images[i][0] + rando();
 					break;
 				}
 			}
 		}
-		if(ind > 0) ++loaded;
 	}
 
 			
@@ -183,8 +220,12 @@
 	//main entry point
 	function startLoading() 
 	{
-		loadImages(0);
-		loadScripts(0);
+		//these have to be loaded in order due to dependencies
+		setTimeout(function (){ loadScripts(0);}, 10);
+		
+		
+		//these can be loaded whenever
+		setTimeout(function () { loadImages();}, 10);
 		
 		setTimeout(function () 
 		{
@@ -270,6 +311,7 @@
 		document.addEventListener("mousedown", startClick);
 		document.addEventListener("mousemove", moveClick);
 		document.addEventListener("mouseup", endClick);
+		document.addEventListener("mouseout", killClick);
 		
 		//keys
 		document.addEventListener('keydown', keyEvent);
@@ -282,6 +324,19 @@
 	
 	//initiate loading/starting the game
 	startLoading();
+	
+	
+	function open_menu()
+	{
+		view = MENU;
+		var cancelled = false;
+		if(unsaved) 
+		{
+			var r = confirm("warning... unsaved changes will be lost. are you sure?");
+			if (!r) cancelled = true;
+		}
+		if(!cancelled)	gridChange();
+	}
 	
 	function setPopup(e)
 	{
@@ -297,7 +352,7 @@
 		{
 			popup.left = scrn.w - popup.width - 20;
 		}
-		if(popup.left - popup.width < 20)
+		if(popup.left < 20)
 		{
 			popup.left = 20;
 		}
@@ -315,8 +370,7 @@
 	{
 		popup.xy = [e.clientX, e.clientY];
 		
-		
-		cx[FRONT_SELECT].clearRect(0,0, scrn.w, scrn.h);
+		clearCanv(FRONT_SELECT);
 		cx[FRONT_SELECT].fillStyle = 'black';
 		cx[FRONT_SELECT].fillRect(popup.left, popup.top, popup.width, popup.height);
 		cx[FRONT_SELECT].fillStyle = 'white';
@@ -360,8 +414,7 @@
 	{
 		if(e !== null) popup.select.end = getSelectInd(e);
 		
-		
-		cx[MID_SELECT].clearRect(0,0,scrn.w, scrn.h);
+		clearCanv(MID_SELECT);
 		cx[MID_SELECT].fillStyle = 'white';
 		
 		var limits = xy_limits(popup.select.start, popup.select.end);
@@ -400,47 +453,57 @@
 	{
 		console.log(e.button);
 		
-		if(e.clientY < scrn.sy)
+		if(view == MENU)
 		{
-			//popup.act = DEFAULT;
-		}
-		else if(e.button == 2)
-		{
-			popup.act = GRID_SQUARE;
-			var ind = getSelectInd(e);
-			popup.select.clicked = ind;
-			if(!ind_in_selected(ind))
-			{
-				popup.select.start = ind;
-				popup.select.end = ind;
-				updateSelect();
-			}
+			setMenuIndex(e, true);
+			
 		}
 		else
 		{
-			popup.act = GRID_SELECT;
-		}
-		
-		if(popup.act == DEFAULT || popup.act == GRID_SQUARE)
-		{
-			cx[FRONT].clearRect(0,0, scrn.w, scrn.h);
-			setPopup(e);
 			
-			for(var i = 0; i < squares.length; i += 1)
+			
+			if(e.clientY < scrn.sy)
 			{
-				cx[FRONT].drawImage(squareImg, (squares[i].imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
-				popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + popup.gap, popup.but, popup.but);
+				//popup.act = DEFAULT;
+			}
+			else if(e.button == 2)
+			{
+				popup.act = GRID_SQUARE;
+				var ind = getSelectInd(e);
+				popup.select.clicked = ind;
+				if(!ind_in_selected(ind))
+				{
+					popup.select.start = ind;
+					popup.select.end = ind;
+					updateSelect();
+				}
+			}
+			else
+			{
+				popup.act = GRID_SELECT;
 			}
 			
-			cx[FRONT].drawImage(playerImg, 0, 0, playerImg.height, playerImg.height,
-				popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + popup.gap, popup.but, popup.but);
-			
-			updatePop(e);
-		}
-		else if(popup.act = GRID_SELECT)
-		{
-			popup.select.start = getSelectInd(e);
-			updateSelect(e);
+			if(popup.act == DEFAULT || popup.act == GRID_SQUARE)
+			{
+				clearCanv(FRONT);
+				setPopup(e);
+				
+				for(var i = 0; i < squares.length; i += 1)
+				{
+					cx[FRONT].drawImage(squareImg, (squares[i].imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+					popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + popup.gap, popup.but, popup.but);
+				}
+				
+				cx[FRONT].drawImage(playerImg, 0, 0, playerImg.height, playerImg.height,
+					popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + popup.gap, popup.but, popup.but);
+				
+				updatePop(e);
+			}
+			else if(popup.act = GRID_SELECT)
+			{
+				popup.select.start = getSelectInd(e);
+				updateSelect(e);
+			}
 		}
 			
 			
@@ -448,67 +511,191 @@
 	
 	function moveClick(e)
 	{
-		//drawScaledLevel(2, cx[FRONT], e.clientX, e.clientY, 200, 200);
-		if(popup.act == null) return
-		
-		if(popup.act == DEFAULT || popup.act == GRID_SQUARE) updatePop(e);
-		if(popup.act == GRID_SELECT) updateSelect(e);
-		
+		if(view == MENU) setMenuIndex(e);
+		else
+		{
+			
+			if(popup.act == DEFAULT || popup.act == GRID_SQUARE) updatePop(e);
+			if(popup.act == GRID_SELECT) updateSelect(e);
+		}
 	}
 	
 	function endClick(e)
 	{
-		if(popup.act == DEFAULT && popup.ind !== null && popup.ind < squares.length)
+		if(view == MENU)
 		{
-			/* defaultSquare = squares[popup.ind];
-			console.log("default", defaultSquare, popup.ind);
-			gridChange(); */
-		}
-		else if(popup.act == GRID_SQUARE && popup.ind !== null)
-		{
-			if(popup.ind < squares.length)
+			if(menu.startRow != -1 && menu.startCol != -1)
 			{
-				limits = xy_limits(popup.select.start, popup.select.end);
-				for(var x = limits[0]; x <= limits[1]; x += 1)
-				{
-					for(var y = limits[2]; y <= limits[3]; y += 1)
+				var indEnd = menu.col * menu.rows + menu.row;
+				var indStart = menu.startCol * menu.rows + menu.startRow;
+				
+				if(indEnd >= 0 && indEnd <= GAME_LEVELS.length && indStart >= 0 && indEnd <= GAME_LEVELS.length)
+				{				
+					//end matches start: load it
+					if(indEnd == indStart)
 					{
-						grid[x][y] = popup.ind;
+						if(e.button == 2)
+						{
+							var r = confirm("delete level " + (indEnd + 1) + "... are you sure?");
+							if (r)
+							{
+								unsynced = true;
+								syncBut.disabled = false;
+								syncBut.style.color = 'red';
+								GAME_LEVELS.splice(indEnd, 1);
+								gridChange();
+							}
+						}
+						else if(menu.moved)
+						{
+							console.log("move cancel");
+							
+						}
+						//load the selected level
+						else if(indEnd < GAME_LEVELS.length)
+						{
+							document.getElementById("overwrite").innerHTML = "overwrite level " + (indEnd + 1);
+							document.getElementById("add_before").innerHTML = "add before level " + (indEnd + 1);
+							document.getElementById("add_after").innerHTML = "add after level " + (indEnd + 1);
+							menu.level = indEnd;
+							
+							for(var x = 0; x <= maxX; x += 1)
+							{
+								for(var y = 0; y <= maxY; y += 1)
+								{
+									grid[y][x] = 0;
+								}
+							}
+							var cur_level = GAME_LEVELS[indEnd];
+
+							numX = cur_level.map[0].length;
+							numY = cur_level.map.length;
+							numXbut.value = numX;
+							numYbut.value = numY
+							document.getElementById("moves").value = cur_level.moves;
+							player[0] = cur_level.player[0];
+							player[1] = cur_level.player[1];
+							for(var y = 0; y < numY; y += 1)
+							{
+								for(var x = 0; x < numX; x += 1)
+								{
+									var letter = cur_level.map[y][x];
+									for(var i = 0; i < squareLetters.length; i += 1)
+									{
+										if(squareLetters[i] == letter)
+										{
+											grid[x][y] = i;
+											break;
+										}
+									}
+								}
+							}
+							popup.select.start = [0,0];
+							popup.select.end = [0,0];
+							view = DESIGN;	
+							gridChange();
+							
+						}
 						
+						
+					}
+					else
+					{
+						console.log("moving", indStart, "to", indEnd);
+						var temp = GAME_LEVELS[indStart];
+						//moving up
+						if(indStart > indEnd)
+						{
+							GAME_LEVELS.splice(indStart, 1)
+							GAME_LEVELS.splice(indEnd, 0, temp);
+						}
+						//moving down
+						else
+						{
+							GAME_LEVELS.splice(indEnd, 0, temp);
+							GAME_LEVELS.splice(indStart, 1);
+						}
 					}
 				}
 			}
-			else
-			{
-				player = [popup.select.clicked[0], popup.select.clicked[1]];
-			}
-			gridChange();
+			
+			menu.startRow = -1;
+			menu.startCol = -1;
+			menu.row = -1;
+			menu.col = -1;
 		}
+		else
+		{
+			if(popup.act == DEFAULT && popup.ind !== null && popup.ind < squares.length)
+			{
+				/* defaultSquare = squares[popup.ind];
+				console.log("default", defaultSquare, popup.ind);
+				gridChange(); */
+			}
+			else if(popup.act == GRID_SQUARE && popup.ind !== null)
+			{
+				if(popup.ind < squares.length)
+				{
+					limits = xy_limits(popup.select.start, popup.select.end);
+					for(var x = limits[0]; x <= limits[1]; x += 1)
+					{
+						for(var y = limits[2]; y <= limits[3]; y += 1)
+						{
+							grid[x][y] = popup.ind;
+							
+						}
+					}
+				}
+				else
+				{
+					player = [popup.select.clicked[0], popup.select.clicked[1]];
+				}
+				unsaved = true;
+				gridChange();
+			}
 
-		cx[FRONT].clearRect(0,0, scrn.w, scrn.h);
-		cx[FRONT_SELECT].clearRect(0,0, scrn.w, scrn.h);
-		popup.act = null;
+			clearCanv(FRONT);
+			clearCanv(FRONT_SELECT);
+			popup.act = null;
+		}
+	}
+	
+	function clearCanv(cxInd)
+	{
+		cx[cxInd].clearRect(0, 0, scrn.w, scrn.h);
+	}
+	
+	function killClick(event)
+	{
+		if(view == MENU)
+		{
+			menu.row = -1;
+			menu.col = -1;
+			menu.startRow = -1;
+			menu.startCol = -1;
+			clearCanv(FRONT_SELECT);
+		}
 	}
 	
 	function keyEvent(event) 
 	{
 		switch(event.keyCode)
 		{
-			case 78:
-				gameOver = false;
-				nextLevel();
-				break;
-			case 80:
-				level.index = Math.max(-1, level.index - 2);
-				gameOver = false;
-				nextLevel();
-				break;
-			case 82:
-				restartBut.action();
-				break;
-			case 90:
-				undoBut.action();
-				break;
+			// case 78:
+				// gameOver = false;
+				// nextLevel();
+				// break;
+			// case 80:
+				// level.index = Math.max(-1, level.index - 2);
+				// gameOver = false;
+				// nextLevel();
+				// break;
+			// case 82:
+				// restartBut.action();
+				// break;
+			// case 90:
+				// undoBut.action();
+				// break;
 		}
 		
 	};
@@ -546,7 +733,7 @@ function gridChange()
 	scrn.sx = (scrn.w - numX * scrn.sq) /2;
 	scrn.sy = (scrn.h - numY * scrn.sq) /2;
 
-	//resize/translate/rotate canvases 
+	//resize canvases 
 	for(var i = 0; i < canv.length; i += 1)
 	{
 		canv[i].width = scrn.w;
@@ -555,27 +742,141 @@ function gridChange()
 		cx[i].resetTransform();
 		cx[i].save();	
 	}
+	
+	
+	if(view == DESIGN)
+	{
+		
+		cx[BACK].fillStyle = 'black';
+		cx[BACK].fillRect(0,0,scrn.w, scrn.h);
+		clearCanv(MID);
+		clearCanv(FRONT);
 
+		
+		for(var x = 0; x < numX; x += 1)
+		{
+			for(var y = 0; y < numY; y += 1)
+			{
+				var imgInd = squares[grid[x][y]].imgInd;
+				drawSquare(x, y, imgInd);
+			}
+		}
+		console.log(player);
+		drawSquare(player[0], player[1], 0, playerImg);
+		updateSelect();
+	}
+	else if(view == MENU)
+	{	
+		drawMenu();
+	}
+}
+
+function setMenuIndex(e, start = false)
+{
+	menu.row = Math.floor(e.clientY / menu.rowHeight);
+	menu.col = Math.floor(e.clientX / menu.colWidth);
+	
+	if(start)
+	{
+		menu.startRow = menu.row;
+		menu.startCol = menu.col;
+		menu.moved = false;
+	}
+	
+	clearCanv(FRONT_SELECT);
+	clearCanv(MID_SELECT);
+	
+	
+	var ind = menu.col * menu.rows + menu.row;
+	
+	
+		
+	if(menu.startRow != -1 && menu.startCol != -1 && (menu.startRow != menu.row || menu.startCol != menu.col))
+	{
+		cx[MID_SELECT].fillStyle = 'white';
+		cx[MID_SELECT].globalAlpha = .5;
+		cx[MID_SELECT].fillRect(menu.startCol * menu.colWidth, menu.startRow * menu.rowHeight, menu.colWidth, menu.rowHeight);
+		cx[MID_SELECT].globalAlpha = 1;
+		menu.moved = true;
+		
+		if(ind >= 0 && ind <= GAME_LEVELS.length)
+		{
+			cx[MID_SELECT].fillStyle = 'blue';
+			cx[MID_SELECT].fillRect(menu.col * menu.colWidth, menu.row * menu.rowHeight, menu.colWidth, 5);
+		}
+	}
+	else 
+	{
+		if(ind >= 0 && ind <= GAME_LEVELS.length)
+		{
+			cx[MID_SELECT].fillStyle = 'red';
+			cx[MID_SELECT].fillRect(menu.col * menu.colWidth, menu.row * menu.rowHeight, menu.colWidth, menu.rowHeight);
+		}
+	}
+	
+		
+		
+	
+	var ind = menu.col * menu.rows + menu.row;
+	
+	if(ind >= 0)
+	{
+		if(ind < GAME_LEVELS.length)
+		{
+			var w = 200; 
+			var h = 200;
+			var wOff = menu.colWidth * .7;
+			var l = menu.col * menu.colWidth + wOff;
+			l = Math.min(scrn.w - wOff , l);
+			var mt = (menu.row + .5) * menu.rowHeight;
+			drawScaledLevel(ind, cx[FRONT_SELECT], l, mt, w, h)
+		}
+
+	}
+}
+
+function drawMenu()
+{
+	// var menu = {
+		// columns: 1,
+		// rows: 1,
+		// colWidth: 1,
+		// rowHeight: 1
+	// };
+	menu.columns = Math.floor(scrn.w/300);
+	menu.colWidth = scrn.w / menu.columns;
+	menu.rows = Math.floor(scrn.h/30);
+	menu.rowHeight = scrn.h / menu.rows;
 	
 	cx[BACK].fillStyle = 'black';
 	cx[BACK].fillRect(0,0,scrn.w, scrn.h);
-	cx[MID].clearRect(0,0,scrn.w, scrn.h);
-	cx[FRONT].clearRect(0,0,scrn.w, scrn.h);
-	
-	for(var x = 0; x < numX; x += 1)
+	clearCanv(MID);
+
+	cx[BACK].strokeStyle = 'white';
+	cx[MID].fillStyle = 'white';
+	cx[MID].font = (menu.rowHeight * .5) + 'px Roboto';
+	cx[MID].textAlign = 'left';
+	cx[MID].textBaseline = 'middle';
+	console.log(menu.rows, menu.columns);
+	for(var x = 0; x < menu.columns; x += 1)
 	{
-		for(var y = 0; y < numY; y += 1)
+		for(var y = 0; y < menu.rows; y += 1)
 		{
-			var imgInd = squares[grid[x][y]].imgInd;
-			drawSquare(x, y, imgInd);
+			cx[BACK].strokeRect(x * menu.colWidth, y * menu.rowHeight, menu.colWidth, menu.rowHeight);
+			var ind = x * menu.rows + y;
+			
+			if(ind < GAME_LEVELS.length)
+			{
+				cx[MID].fillText("Level " + (ind + 1), x * menu.colWidth + 10, (y + .5) * menu.rowHeight);
+			}
+		
+		
 		}
 	}
-	console.log(player);
-	drawSquare(player[0], player[1], 0, playerImg);
-	updateSelect();
 }
+		
 
-function drawScaledLevel(levelInd, CX, l, t, w, h)
+function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
 {
 	if(levelInd < 0 || levelInd > GAME_LEVELS.length -1) return;
 	
@@ -590,6 +891,10 @@ function drawScaledLevel(levelInd, CX, l, t, w, h)
 	var actH = sqSize * numY;
 	var sqOff = sqSize * bordPct/2;
 	var sqReduc = sqSize - 2 * sqOff;
+	
+	var t = mid_t - actH / 2;
+	t = Math.min(scrn.h - actH, t);
+	t = Math.max(0, t);
 
 	CX.fillStyle = 'black';
 	CX.fillRect(l, t, actW, actH);
@@ -637,14 +942,8 @@ function levels_to_text()
 }
 
 
-function add_level(overwrite)
-{
-
-	if(overwrite && GAME_LEVELS.length > startedWith)
-	{
-		GAME_LEVELS.pop();
-	}
-	
+function add_level(type)
+{	
 	var new_level = {};
 	new_level.map = [];
 	for(var y = 0; y < numY; y += 1)
@@ -657,11 +956,42 @@ function add_level(overwrite)
 			str += letter;
 		}
 		new_level.map.push(str);
-		console.log(str);
 	}
 	new_level.player = [player[0], player[1]];
 	new_level.moves = Number(moves.value);
-	GAME_LEVELS.push(new_level);
+	
+	switch(type)
+	{
+		case OVERWRITE:
+			console.log("overwrite", menu.level);
+			GAME_LEVELS.splice(menu.level, 1, new_level); 
+			break;
+		case ADD_AFTER:
+			console.log("after", menu.level);
+			GAME_LEVELS.splice(menu.level + 1, 0, new_level);
+			break;
+		case ADD_BEFORE:
+			console.log("before", menu.level);
+			GAME_LEVELS.splice(menu.level, 0, new_level);
+			break;
+		case ADD_END:
+			console.log("end", menu.level);
+			GAME_LEVELS.push(new_level);
+			break;
+		default:
+			console.log("which type?", type);
+	}
+	
+	unsaved = false;
+	unsynced = true;
+	syncBut.disabled = false;
+	syncBut.style.color = 'red';
+
+}
+	
+function sync()
+{
+				
 	
 	var WEBSOCKET_ROUTE = '/DesignerWS';
 	var ws = null;
@@ -686,13 +1016,19 @@ function add_level(overwrite)
 	ws.onclose = function(evt)
 	{
 		console.log('closed');
+		unsynced = false;
+		document.getElementById("sync").disabled = true;
+		syncBut.style.color = 'black';
 	};	
 	
 	ws.onmessage = function(evt) 
 	{
 		console.log(evt.data);
 		ws.close();
+		
 	} 
+	
+	
 }
 	
 	

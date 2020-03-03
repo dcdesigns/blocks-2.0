@@ -66,6 +66,7 @@
 	const DEAD = 8;
 	const WINNING = 9;
 	const FINISHED = 10;
+	const REWIND = 11;
 	
 	const Pi_4 = Math.PI/4;
 	const Pi3_4 = 3 * Pi_4;
@@ -169,10 +170,11 @@
 	function startLoading() 
 	{
 		//these have to be loaded in order due to dependencies
-		loadScripts(0);
+		setTimeout(function (){ loadScripts(0);}, 10);
+		
 		
 		//these can be loaded whenever
-		loadImages();
+		setTimeout(function () { loadImages();}, 10);
 		
 		
 		setTimeout(function () 

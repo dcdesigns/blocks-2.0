@@ -129,7 +129,8 @@ var player = {
 	target: [0,0], //probably not necessary once changes are in place
 	targetPhase: 0,
 	lastMatchPos: [2,3],
-	history: [],	
+	history: [],
+	rewindPos: [0,0],
 	
 	//z motion (jump/fall)
 	z: 0,
@@ -188,82 +189,101 @@ function setSquareAction()
 
 function updatePlayer(elapsed)
 {
-	//update xy
-	player.pos[0] += elapsed * player.vel[0];
-	player.pos[1] += elapsed * player.vel[1];
-	
-	var on_board = onBoard();
-	if(!on_board && player.state !== FALLING)
+	if(player.state == REWIND)
 	{
-		player.state = FALLING;
-		//startFade();
-	}
-	
-	//update z
-	player.z_vel += elapsed * player.accel;
-	player.z_vel = Math.max(-z_vel_init, player.z_vel);
-	player.z += elapsed * player.z_vel;
-	//console.log(player.z);
-	if(player.state !== FALLING)
-	{
-		player.z = Math.max(0, player.z);
+		player.pos[0] += (player.rewindPos[0] - player.pos[0]) * rewindRate;
+		player.pos[1] += (player.rewindPos[1] - player.pos[1]) * rewindRate;
+		player.z += -player.z * rewindRate;
+		player.theta -= player.theta * rewindRate;
+		player.opacity += (1 - player.opacity) * rewindRate;
 		
+		if(vectorEqual(player.pos, player.rewindPos, closeLimit) && player.z > -closeLimit && player.z < closeLimit)
+		{
+			player.pos = vectorCopy(player.rewindPos);
+			killAll();
+		}
 	}
 	else
 	{
-		if(player.z <= fallLimit)
-		{
-			player.z = fallLimit;
-			killXY();
-			killSpin();
-		}
-	}
-	//update angle
-	var start_omega = player.omega;
-	player.omega *= player.alpha;
-	player.theta += elapsed * player.omega * player.spinDir;
-	
-	//update fade
-	player.opacity *= player.opacity_rate;
-
-	//top of winning jump: load next level
-	if(player.state == WINNING && !gameOver && player.z >= playerLoadHeight)
-	{
-		player.state = ACTIVE;
-		nextLevel();
-	}
-	
-	//check for landing on a square
-	if([ACTIVE, WINNING].includes(player.state) && player.z == 0)
-	{
-		//reset accel in case winning was active
-		player.accel = z_accel;
-		
-		if(player.jumping == false && player.z == 0)
-		{
-			player.z_vel = 0;
-		}
-		
-		//see how far we've moved from the last known square
-		dist = absVector(vectorSubtract(player.pos, player.lastMatchPos));
-	
-		//landed from a jump or slid to a new square
-		if(player.jumping || dist[0] >= 1 || dist[1] >= 1)
-		{
-			player.pos = roundVector(player.pos);
-			if(on_board)
-			{
-				setSquareAction();
-				player.lastMatchPos = vectorCopy(player.pos);
 				
-			}
-			/* else
-			{
-				player.state = FALLING;
-				startFade();
-			} */
+		//update xy
+		player.pos[0] += elapsed * player.vel[0];
+		player.pos[1] += elapsed * player.vel[1];
+		
+		var on_board = onBoard();
+		if(!on_board && player.state !== FALLING)
+		{
+			player.state = FALLING;
+			startFade(opacity_rate_fall);
 		}
 		
+		//update z
+		player.z_vel += elapsed * player.accel;
+		player.z_vel = Math.max(-z_vel_init, player.z_vel);
+		player.z += elapsed * player.z_vel;
+		//console.log(player.z);
+		if(player.state !== FALLING)
+		{
+			player.z = Math.max(0, player.z);
+			
+		}
+		else
+		{
+			if(player.z <= fallLimit)
+			{
+				player.z = fallLimit;
+				killXY();
+				killSpin();
+			}
+		}
+		//update angle
+		var start_omega = player.omega;
+		player.omega *= player.alpha;
+		player.theta += elapsed * player.omega * player.spinDir;
+		
+		//update fade
+		player.opacity *= player.opacity_rate;
+
+		//top of winning jump: load next level
+		if(player.state == WINNING && !gameOver && player.z >= playerLoadHeight)
+		{
+			player.state = ACTIVE;
+			nextLevel();
+		}
+		
+		//check for landing on a square
+		if([ACTIVE, WINNING].includes(player.state) && player.z == 0)
+		{
+			//reset accel in case winning was active
+			player.accel = z_accel;
+			
+			if(player.jumping == false && player.z == 0)
+			{
+				player.z_vel = 0;
+			}
+			
+			//see how far we've moved from the last known square
+			dist = absVector(vectorSubtract(player.pos, player.lastMatchPos));
+		
+			//landed from a jump or slid to a new square
+			if(player.jumping || dist[0] >= 1 || dist[1] >= 1)
+			{
+				player.pos = roundVector(player.pos);
+				if(on_board)
+				{
+					if(player.history.length) setSquareAction();
+					else killAll();
+					player.lastMatchPos = vectorCopy(player.pos);
+					
+				}
+				/* else
+				{
+					player.state = FALLING;
+					startFade();
+				} */
+			}
+			
+		}
 	}
 }
 			
@@ -277,6 +297,7 @@ function updatePlayer(elapsed)
 	if((newPos[0] > -boardBuffer) && (newPos[0] < level.size[0] - 1 + boardBuffer) && (newPos[1] > -boardBuffer) && newPos[1] < (level.size[1] - 1 + boardBuffer))
 	{
 		ret = true;
+		//if(!Number.isInteger(newPos[0]) || !Number.isInteger(newPos[1]) || level.squares[newPos[1]][newPos[0]] !== EmptySquare) ret = true;
 	}
 	return ret;
  }
@@ -340,9 +361,9 @@ function killAll()
 	player.jumping = false;
 }
 
-function startFade()
+function startFade(rate = opacity_rate_init)
 {
-	player.opacity_rate = opacity_rate_init;
+	player.opacity_rate = rate;
 }
 
 function startSpin(spinVel = omega_init)
