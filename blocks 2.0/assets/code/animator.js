@@ -302,17 +302,19 @@ function centerRatio(dimension, setting, invert = false)
 }
 	
 
-function drawButton(img, cx, imgInd, butInd)
+function drawButton(img, cx, imgInd, butInd, clearIt = false)
 {
 	//horizontal buttons
 	if(!buttsFlipped)
 	{
+		if(clearIt) cx.clearRect(scrn.butOff[paused] + scrn.but * butInd, scrn.h - scrn.but, scrn.but, scrn.but);
 		cx.drawImage(img, imgInd * img.height, 0, img.height, img.height,
 			scrn.butOff[paused] + scrn.but * butInd, scrn.h - scrn.but, scrn.but, scrn.but);
 	}
 	//vertical buttons
 	else
 	{
+		if(clearIt) cx.clearRect(scrn.w - scrn.but, scrn.h - scrn.butOff[paused] - scrn.but * (butInd + 1), scrn.but, scrn.but);
 		cx.drawImage(img, imgInd * img.height, 0, img.height, img.height,
 			scrn.w - scrn.but, scrn.h - scrn.butOff[paused] - scrn.but * (butInd + 1), scrn.but, scrn.but);
 	}
@@ -1010,12 +1012,16 @@ function animate()
 			{
 				
 				hintActive = true;
+				player.targetPhase = 0;
+				//console.log("hint active");
 			}
 
 			//look for OFF trigger
 			if(hintActive && player.targetPhase > targetMillis)
 			{
 				hintActive = false;
+				//console.log("hint off", player.targetPhase);
+				
 				idleFlash = false;
 				idleMillis = 0;
 			}
@@ -1056,7 +1062,7 @@ function animate()
 		updatePlayer(elapsed);
 		//drawPlayer(elapsed);
 		
-		var CX = (player.z > -playerThickness) ? cx[ABOVE_BASE] : (player.z > -blockDepth) ? cx[BELOW_BASE] : cx[BELOW_ALL];
+		var CX = (player.z > -(3 * playerThickness)) ? cx[ABOVE_BASE] : (player.z > -blockDepth) ? cx[BELOW_BASE] : cx[BELOW_ALL];
 		lastCX = CX;
 		
 		if(player.opacity == 1 && player.state !== FALLING) drawShadow(player.pos, player.z, player.theta, player.radius, CX, 'black', shadowAlpha);

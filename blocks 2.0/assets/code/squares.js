@@ -1,3 +1,6 @@
+
+
+
 var Grass = {
 	imgInd: 0,
 	animate: null,
@@ -12,6 +15,7 @@ var Goal = {
 	imgInd:  1,
 	animate: null,
 	sound: winSnd,
+	theme: winTheme,
 	act:  function()
 	{
 		killXY();
@@ -19,6 +23,7 @@ var Goal = {
 		{
 			
 			player.goalLoops = 0;
+			winStart = new Date().getTime();
 		}
 		
 		startJump(z_vel_init, omega_win);
@@ -50,6 +55,7 @@ var Ice = {
 
 var Portal = {
 	imgInd: 6,
+	sound: portalSnd,
 	animate: {time: 100, minInd: 6, maxInd: 8},
 	act: function()
 	{

@@ -19,14 +19,12 @@
 </div>
 
 <script>
-	var ALLOW_SOUND = 1;
-	var has_sound = false;
-	const sound_fail = 7000;
 	
 	//loading bar colors: defined here because the color image isn't loaded yet
 	const color_load_back = 'black';
 	const color_load_base = 'gray';
 	const color_load_bar = 'RGB(25,124,247)'
+	var winStart;
 	
 	//color indexes
 	var COLOR_BACK= '';
@@ -88,7 +86,6 @@
 		['blocks/pics/numbers.svg', "numbersImg"]
 	];
 	
-	var allSounds;
 	var jumpSnd = 0;
 	var lavaSnd = 1;
 	var trampSnd = 2;
@@ -97,17 +94,21 @@
 	var swoopSnd = 5;
 	var fallSnd = 6;
 	var winSnd = 7;
+	var portalSnd = 8;
+	var winTheme = 9;
 	
 	var soundFile = 'blocks/audio/gameSounds.mp3';
 	var soundOrder = [
-		[trampSnd, 1], 
-		[fallSnd, 1],
+		[trampSnd, 1],
 		[grassSnd, .5],
-		[jumpSnd, .5],
-		[swoopSnd, .5],
-		[lavaSnd, 2],
-		[iceSnd, 9],
-		[winSnd, 3],
+		[jumpSnd, 1],
+		[swoopSnd, .5], 
+		[fallSnd, 1],
+		[lavaSnd, 4],
+		[portalSnd, 1], 
+		[winSnd, 1],
+		[iceSnd, 11.5],
+		[winTheme, 4],
 	];
 
 	
@@ -142,7 +143,7 @@
 	//load all scripts and images
 	var imageCnt = images.length;
 	var scriptCnt = scripts.length;
-	var soundCnt = (ALLOW_SOUND) ? 1 : 0;//sounds.length;
+	var soundCnt = 1;//sounds.length;
 	var loaded = 0;
 	var toLoad = imageCnt + scriptCnt + soundCnt;
 	var canv = [];
@@ -155,6 +156,98 @@
 	function rando()
 	{
 		return "?" + new Date().getTime();
+	}
+
+
+
+	const AudioContext = window.AudioContext || window.webkitAudioContext;
+	var audioCx;
+	var source;
+	var tune;
+	var g;
+	var gTheme;
+	
+	window.onload = function() 
+	{
+		audioCx = new AudioContext();
+		g = audioCx.createGain();
+		g.gain.value = 1;
+		g.connect(audioCx.destination);
+		
+		gTheme = audioCx.createGain();
+		gTheme.gain.value = 1;
+		gTheme.connect(audioCx.destination);
+		request.send();
+	}
+	
+	var myBuffer;
+
+	var request = new XMLHttpRequest();
+	request.open('GET', 'blocks/audio/gameSounds.mp3', true);
+	request.responseType = 'arraybuffer';
+
+	// Decode asynchronously
+	request.onload = function() 
+	{
+		audioCx.decodeAudioData(request.response, function(theBuffer) 
+		{
+			myBuffer = theBuffer;
+		});
+		++loaded;
+		
+	}
+	
+	
+	function playSound(snd) 
+	{
+		if(source) source.stop();
+		source = audioCx.createBufferSource();
+		source.buffer = myBuffer;
+		source.connect(g);
+		
+		
+		var strt = 0;
+		var len;
+		for(var i = 0; i < soundOrder.length; i += 1)
+		{
+			len = soundOrder[i][1];
+			if(soundOrder[i][0] == snd)
+			{
+				break;
+			}
+			else
+			{
+				strt += len;
+			}
+		}
+		//console.log("playing sound", strt, len);
+		source.start(0, strt, len);
+	}
+	
+	function playTheme(snd) 
+	{
+		if(tune) tune.stop();
+		tune = audioCx.createBufferSource();
+		tune.buffer = myBuffer;
+		tune.connect(gTheme);
+		
+		
+		var strt = 0;
+		var len;
+		for(var i = 0; i < soundOrder.length; i += 1)
+		{
+			len = soundOrder[i][1];
+			if(soundOrder[i][0] == snd)
+			{
+				break;
+			}
+			else
+			{
+				strt += len;
+			}
+		}
+		//console.log("playing tune", strt, len);
+		tune.start(0, strt, len);
 	}
 
 	
@@ -208,57 +301,7 @@
 	}
 	
 
-	var timey;
-	function loadSounds()
-	{
-		allSounds = document.createElement("audio");
-		allSounds.onloadeddata = function()
-		{
-			++loaded;
-			has_sound = true;
-			console.log("sound");
-		};
-		allSounds.setAttribute("preload", "auto");
-		allSounds.setAttribute("controls", "none");
-		allSounds.style.display = "none";
-		allSounds.src = soundFile + rando();
-		
-		
-		allSounds.start = function(snd)
-		{
-			//allSounds.pause();
-			var strt = 0;
-			for(var i = 0; i < soundOrder.length; i += 1)
-			{
-				if(soundOrder[i][0] == snd)
-				{
-					allSounds.currentTime = strt;
-					var len = soundOrder[i][1] * 1000;
-					allSounds.play();
-					clearTimeout(timey);
-					timey = setTimeout(function(oldInd)
-					{
-						allSounds.pause();
-					}, len);
-					break;
-				}
-				else
-				{
-					strt += soundOrder[i][1];
-				}
-			}
-		};
-	}
-	
-	function triggerSounds()
-	{
-		ALLOW_SOUND = 0;
-		--toLoad;
-		
-		/* allSounds.play();
-		allSounds.pause(); */
-		document.removeEventListener("touchstart", triggerSounds);
-	}
+
 
 	//main entry point
 	function startLoading() 
@@ -271,11 +314,6 @@
 		
 		//these can be loaded whenever
 		setTimeout(function () { loadImages();}, 10);
-		if(ALLOW_SOUND)
-		{
-			setTimeout(function () { loadSounds();}, 10);
-			document.addEventListener("touchstart", triggerSounds);
-		}
 		
 		
 		setTimeout(function () 
@@ -320,13 +358,6 @@
 		cx[GROUND].fillStyle = color_load_bar;
 		cx[GROUND].fillRect((w - r_w)/2, (h - r_h)/2, r_w * loaded/toLoad, r_h);
 		
-		var elapsed = new Date().getTime() - began;
-		if(!has_sound, elapsed > sound_fail && ALLOW_SOUND)
-		{
-			ALLOW_SOUND = 0;
-			--toLoad;
-			document.removeEventListener("touchstart", triggerSounds);
-		}
 
 		//next loop
 		if(loaded < toLoad)
@@ -410,6 +441,11 @@
 					case hintBut:
 						HINT_IND = i;
 						break;
+					case muteBut:
+					case unMuteBut:
+						MUTE_IND = i;
+						break;
+						
 				}
 			}
 		}

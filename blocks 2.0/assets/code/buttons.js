@@ -64,12 +64,7 @@ var restartBut = {
 			
 			//player.state = IDLE;
 			player.state = REWIND;
-			if(ALLOW_SOUND)
-			{
-				/* iceSnd.stop();
-				swoopSnd.play(); */
-				allSounds.start(swoopSnd);
-			}
+			playSound(swoopSnd);
 			gameOver = false;
 			player.rewindPos = player.history[0];
 			player.history = [];
@@ -90,12 +85,7 @@ var undoBut = {
 			
 			//player.state = IDLE;
 			player.state = REWIND;
-			if(ALLOW_SOUND)
-			{
-				/* iceSnd.stop();
-				swoopSnd.play(); */
-				allSounds.start(swoopSnd);
-			}
+			playSound(swoopSnd);
 			gameOver = false;
 			player.rewindPos = player.history.pop();
 			player.lastMatchPos = vectorCopy(player.pos);
@@ -150,9 +140,36 @@ var hintBut = {
 	}
 };
 
+var muteBut = {
+	imgInd: t_ind++,
+	ignore: false,
+	action: function(){
+		toggleSound();
+	}
+};
+
+var unMuteBut = {
+	imgInd: t_ind++,
+	ignore: false,
+	action: function(){
+		toggleSound();
+	}
+};
+
+function toggleSound()
+{
+	val = g.gain.value ? 0 : 1;
+	g.gain.value = val;
+	gTheme.gain.value = val;
+	
+	butts[0][MUTE_IND] = val ? muteBut : unMuteBut;
+	drawButton(butImg, cx[BUT_CANV], butts[0][MUTE_IND].imgInd, MUTE_IND, true);
+
+};
+
  //screen buttons
 var butts = [
-	[scrnButNotFull, restartBut, undoBut, hintBut, menuBut, movesBut],
+	[scrnButNotFull, restartBut, undoBut, hintBut, muteBut, menuBut, movesBut],
 	[scrnButNotFull, prevBut, nextBut, menuBut, userBut]
 ];
 

@@ -10,6 +10,7 @@ var MOVES_DISPLAY = 0;
 var UNDO_IND = 0;
 var RESTART_IND = 0;
 var HINT_IND = 0;
+var MUTE_IND = 0;
 var paused = 0;
 
 
@@ -179,10 +180,15 @@ function setSquareAction()
 	if(onBoard(player.pos))
 	{
 		var sq = level.squares[player.pos[1]][player.pos[0]];
-		if(ALLOW_SOUND)
+		var prevSq = level.squares[player.lastMatchPos[1]][player.lastMatchPos[0]];
+						
+		if(player.jumping || (prevSq != sq || sq != Ice))
 		{
 			//iceSnd.stop();
-			if(sq.sound != null && player.state == ACTIVE) allSounds.start(sq.sound);
+			
+			if(sq.sound != null) playSound(sq.sound);
+			if(sq.theme != null && player.state == ACTIVE) playTheme(sq.theme);
+			
 			//sq.sound.play();
 		}
 		sq.act();
@@ -220,17 +226,12 @@ function updatePlayer(elapsed)
 		player.pos[1] += elapsed * player.vel[1];
 		
 		var on_board = onBoard();
-		if(!on_board && player.state !== FALLING)
+		/* if(!on_board && player.state !== FALLING)
 		{
 			player.state = FALLING;
 			startFade(opacity_rate_fall);
-			if(ALLOW_SOUND)
-			{
-				/* iceSnd.stop();
-				fallSnd.play(); */
-				allSounds.start(fallSnd);
-			}
-		}
+			playSound(fallSnd);
+		} */
 		
 		//update z
 		player.z_vel += elapsed * player.accel;
@@ -284,34 +285,28 @@ function updatePlayer(elapsed)
 			if(player.jumping || dist[0] >= 1 || dist[1] >= 1)
 			{
 				player.pos = roundVector(player.pos);
+				//console.log("square", player.pos[0], player.pos[1], player.vel[0], player.vel[1]);
 				if(on_board)
 				{
 					if(player.history.length) 
 					{
-						var old = level.squares[player.lastMatchPos[1]][player.lastMatchPos[0]];
-						var sq = level.squares[player.pos[1]][player.pos[0]];
-						if(old !== sq || sq !== Ice)
-						{
-							setSquareAction();
-						}
+						setSquareAction();
 					}
 					else
 					{
-						if(ALLOW_SOUND)
-						{
-							allSounds.start(grassSnd);
-							//grassSnd.play();
-						}
+						console.log(new Date().getTime() - winStart, "seconds");
+						playSound(grassSnd);
 						killAll();
 					}
 					player.lastMatchPos = vectorCopy(player.pos);
 					
 				}
-				/* else
+				else
 				{
 					player.state = FALLING;
-					startFade();
-				} */
+					startFade(opacity_rate_fall);
+					playSound(fallSnd);
+				}
 			}
 			
 		}
