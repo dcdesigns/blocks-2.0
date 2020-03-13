@@ -5,7 +5,7 @@
 
 <body>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, height=device-height,  initial-scale=1.0, user-scalable=no, user-scalable=0;"/>
 <div id="canvDiv" class="unselectable" style="position:absolute; left: 0, top: 0;">
 	<canvas id="canv0" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
 	<canvas id="canv1" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
@@ -60,7 +60,12 @@
 	const SELECT_BUT = -1;
 	const SELECT_ZOOM = 2; 
 	const SELECT_MOVE = 3;
-
+	
+	const BACK_SOUNDS = 0;
+	const ACTION_SOUNDS = 1;
+	const THEME_SOUNDS = 2;
+	var audio_tracks = [null, null, null];
+	
 	const ACTIVE = 4;
 	const IDLE = 5;
 	const BURNING = 6
@@ -96,6 +101,7 @@
 	var winSnd = 7;
 	var portalSnd = 8;
 	var winTheme = 9;
+	var gearSnd = 10;
 	
 	var soundFile = 'blocks/audio/gameSounds.mp3';
 	var soundOrder = [
@@ -109,6 +115,7 @@
 		[winSnd, 1],
 		[iceSnd, 11.5],
 		[winTheme, 4],
+		[gearSnd, .2],
 	];
 
 	
@@ -162,8 +169,8 @@
 
 	const AudioContext = window.AudioContext || window.webkitAudioContext;
 	var audioCx;
-	var source;
-	var tune;
+	
+	
 	var g;
 	var gTheme;
 	
@@ -183,7 +190,7 @@
 	var myBuffer;
 
 	var request = new XMLHttpRequest();
-	request.open('GET', 'blocks/audio/gameSounds.mp3', true);
+	request.open('GET', soundFile + rando(), true);
 	request.responseType = 'arraybuffer';
 
 	// Decode asynchronously
@@ -198,12 +205,12 @@
 	}
 	
 	
-	function playSound(snd) 
+	function playSound(track, snd) 
 	{
-		if(source) source.stop();
-		source = audioCx.createBufferSource();
-		source.buffer = myBuffer;
-		source.connect(g);
+		if(audio_tracks[track]) audio_tracks[track].stop();
+		audio_tracks[track] = audioCx.createBufferSource();
+		audio_tracks[track].buffer = myBuffer;
+		audio_tracks[track].connect(g);
 		
 		
 		var strt = 0;
@@ -220,35 +227,10 @@
 				strt += len;
 			}
 		}
-		//console.log("playing sound", strt, len);
-		source.start(0, strt, len);
+		console.log("playing sound", strt, len);
+		audio_tracks[track].start(0, strt, len);
 	}
-	
-	function playTheme(snd) 
-	{
-		if(tune) tune.stop();
-		tune = audioCx.createBufferSource();
-		tune.buffer = myBuffer;
-		tune.connect(gTheme);
-		
-		
-		var strt = 0;
-		var len;
-		for(var i = 0; i < soundOrder.length; i += 1)
-		{
-			len = soundOrder[i][1];
-			if(soundOrder[i][0] == snd)
-			{
-				break;
-			}
-			else
-			{
-				strt += len;
-			}
-		}
-		//console.log("playing tune", strt, len);
-		tune.start(0, strt, len);
-	}
+
 
 	
 	function loadScripts(ind)

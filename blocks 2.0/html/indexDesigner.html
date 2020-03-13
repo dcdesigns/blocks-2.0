@@ -40,6 +40,7 @@
 	var winSnd = 7;
 	var portalSnd = 8;
 	var winTheme = 9;
+	var gearSnd = 10;
 </script>
 
 
@@ -95,7 +96,7 @@ var menu = {
 
 var popup = {
 	act: null,
-	but: 25,
+	but: 60,
 	gap: 5,
 	left: 0, 
 	top: 0,
@@ -136,6 +137,7 @@ var canv = [];
 var cx = [];
 var squares = [];
 var squareLetters = [];
+var modifiers = [];
 var grid = [];
 var player = [0,0];
 var numX = 5;
@@ -293,6 +295,31 @@ function animateLoading(w, h, r_w, r_h)
 	}
 }
 
+function emptyMod()
+{
+	return ({	
+				direction: RotateClockwise,
+				inc: RotateSingle,
+				portalGroup: PortalZero,
+				trigger: NoModifier,
+				timer: NoModifier
+			});
+}
+
+function clearMods()
+{
+	modifiers = [];
+	for(var x = 0; x <= maxX; x += 1)
+	{
+		var mod = [];
+		for(var y = 0; y <= maxY; y += 1)
+		{
+			mod.push(emptyMod());	
+		}
+		modifiers.push(mod);
+	}
+}
+
 //gets the desinging going once everything's loaded
 function startDesigning()
 {
@@ -306,17 +333,18 @@ function startDesigning()
 		squares.push(sqCodes[attr]);
 		ind += 1;
 	}
-	
+
 	grid = [];
 	for(var x = 0; x <= maxX; x += 1)
 	{
-		var col = []
+		var col = [];
 		for(var y = 0; y <= maxY; y += 1)
 		{
 			col.push(0);
 		}
 		grid.push(col);
 	}
+	clearMods();
 	//console.log(grid);
 
 	//set up input listeners
@@ -349,16 +377,21 @@ function open_menu()
 		var r = confirm("warning... unsaved changes will be lost. are you sure?");
 		if (!r) cancelled = true;
 	}
-	if(!cancelled)	gridChange();
+	if(!cancelled)
+	{
+		unsaved = false;
+		gridChange();
+	}
 }
 
 function setPopup(e)
 {
 	
 	popup.gap = 5;
-	var numSq = squares.length + 1;
-	popup.width = numSq * (popup.but) + (numSq + 1) * popup.gap;
-	popup.height = popup.but + 2 * popup.gap;
+	var numSq = Math.max(squares.length + 1, modObjects.length);
+	popup.width = (squares.length + 1) * (popup.but) + (squares.length + 2) * popup.gap;
+	popup.width2 = (modObjects.length) * (popup.but) + (modObjects.length + 1) * popup.gap;
+	popup.height = 2* popup.but + 3 * popup.gap;
 	popup.left = e.clientX - popup.width/2;
 	popup.top = e.clientY - popup.height/2;
 	
@@ -385,20 +418,22 @@ function updatePop(e)
 	popup.xy = [e.clientX, e.clientY];
 	
 	clearCanv(FRONT_SELECT);
-	cx[FRONT_SELECT].fillStyle = 'black';
-	cx[FRONT_SELECT].fillRect(popup.left, popup.top, popup.width, popup.height);
+	cx[FRONT_SELECT].fillStyle = 'rgb(18,18,18)';
+	cx[FRONT_SELECT].fillRect(popup.left, popup.top, popup.width, popup.height/2);
+	cx[FRONT_SELECT].fillRect(popup.left, popup.top + popup.height/2, popup.width2, popup.height/2);
 	cx[FRONT_SELECT].fillStyle = 'white';
 	popup.ind = Math.floor((popup.xy[0] - (popup.left + popup.gap/2))/(popup.but + popup.gap));
-	//console.log(popup.ind, popup.xy[0], popup.left, popup.gap, popup.but);
+	popup.ind_y = Math.floor((popup.xy[1] - (popup.top + popup.gap/2))/(popup.but + popup.gap));
+	console.log(popup.ind, popup.ind_y);// popup.xy[0], popup.left, popup.gap, popup.but);
 	
-	if(popup.ind >= 0 && popup.ind <= squares.length &&
-		popup.xy[1] >= popup.top && popup.xy[1] <= popup.top + popup.height)
+	if(popup.ind >= 0 && ((popup.ind_y == 0 && popup.ind <= squares.length) || (popup.ind_y == 1 && popup.ind < modObjects.length)))
 	{
-		cx[FRONT_SELECT].fillRect(popup.left + popup.ind * (popup.but + popup.gap), popup.top, popup.but + 2 * popup.gap, popup.but + 2 * popup.gap);
+		cx[FRONT_SELECT].fillRect(popup.left + popup.ind * (popup.but + popup.gap), popup.top + popup.ind_y * (popup.but + popup.gap), popup.but + 2 * popup.gap, popup.but + 2 * popup.gap);
 	}
 	else
 	{
 		popup.ind = null;
+		popup.ind_y = null;
 	}
 }
 
@@ -499,9 +534,14 @@ function startClick(e)
 				cx[FRONT].drawImage(squareImg, (squares[i].imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
 				popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + popup.gap, popup.but, popup.but);
 			}
-			
 			cx[FRONT].drawImage(playerImg, 0, 0, playerImg.height, playerImg.height,
 				popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + popup.gap, popup.but, popup.but);
+			for(var i = 0; i < modObjects.length; i += 1)
+			{
+				cx[FRONT].drawImage(squareImg, (modObjects[i].imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+				popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + 2 * popup.gap + popup.but, popup.but, popup.but);
+			}
+			
 			
 			updatePop(e);
 		}
@@ -579,6 +619,7 @@ function endClick(e)
 								grid[y][x] = 0;
 							}
 						}
+						clearMods();
 						var cur_level = GAME_LEVELS[indEnd];
 
 						numX = cur_level.map[0].length;
@@ -603,6 +644,42 @@ function endClick(e)
 								}
 							}
 						}
+
+						if(typeof(cur_level.specialCodes) != "undefined")
+						{
+							var backSnd = null;
+							for(var i = 0; i < cur_level.specialCodes.length; i += 1)
+							{
+								var special = cur_level.specialCodes[i];
+								var mod = modifiers[special.x][special.y];
+								console.log("special", special);
+								
+								//portal
+								if(typeof(special.portalGroup) != "undefined")
+								{
+									mod.portalGroup = special.portalGroup;
+									console.log("portal", special);
+								}
+								//trigger/timer tramps
+								else
+								{
+									mod.direction = special.direction;
+									mod.inc = special.inc;
+			
+									//trigger tramp
+									if(typeof(special.trigger) != "undefined")
+									{
+										mod.trigger = special.trigger;
+									}
+									//timer tramp
+									else if(typeof(special.timer) != "undefined")
+									{
+										mod.timer = special.timer;
+									}
+								}
+							}
+						}
+
 						popup.select.start = [0,0];
 						popup.select.end = [0,0];
 						view = DESIGN;	
@@ -639,23 +716,73 @@ function endClick(e)
 	}
 	else
 	{
-		if(popup.act == GRID_SQUARE && popup.ind !== null)
+		if(popup.act == GRID_SQUARE && popup.ind !== null && popup.ind_y !== null)
 		{
-			if(popup.ind < squares.length)
+			limits = xy_limits(popup.select.start, popup.select.end);
+			if(popup.ind_y == 0)
 			{
-				limits = xy_limits(popup.select.start, popup.select.end);
-				for(var x = limits[0]; x <= limits[1]; x += 1)
+				if(popup.ind < squares.length)
 				{
-					for(var y = limits[2]; y <= limits[3]; y += 1)
+					
+					for(var x = limits[0]; x <= limits[1]; x += 1)
 					{
-						grid[x][y] = popup.ind;
-						
+						for(var y = limits[2]; y <= limits[3]; y += 1)
+						{
+							grid[x][y] = popup.ind;
+							
+						}
 					}
+				}
+				else
+				{
+					player = [popup.select.clicked[0], popup.select.clicked[1]];
 				}
 			}
 			else
 			{
-				player = [popup.select.clicked[0], popup.select.clicked[1]];
+				var mod = modObjects[popup.ind];
+				console.log("selected mod", mod);
+				console.log(limits);
+				for(var x = limits[0]; x <= limits[1]; x += 1)
+				{
+					for(var y = limits[2]; y <= limits[3]; y += 1)
+					{
+						if(typeof(mod.trigger) != "undefined")
+						{
+							console.log("trig");
+							modifiers[x][y].trigger = mod;
+							modifiers[x][y].timer = NoModifier;	
+						}
+						else if(typeof(mod.limit) != "undefined")
+						{
+							console.log("timer");
+							modifiers[x][y].timer = mod;
+							modifiers[x][y].trigger = NoModifier;
+						}
+						else if(mod == NoModifier)
+						{
+							console.log("none");
+							modifiers[x][y].timer = NoModifier;
+							modifiers[x][y].trigger = NoModifier;
+						}
+						else if(typeof(mod.direction) != "undefined")
+						{
+							console.log("dir");
+							modifiers[x][y].direction = mod;
+						}
+						else if(typeof(mod.inc) != "undefined")
+						{
+							console.log("inc");
+							modifiers[x][y].inc = mod;
+						}
+						else if(typeof(mod.portalGroup) != "undefined")
+						{
+							console.log("portal");
+							modifiers[x][y].portalGroup = mod;
+						}
+					}
+				}				
+				console.log(mod);
 			}
 			unsaved = true;
 			gridChange();
@@ -734,6 +861,10 @@ function keyEvent(event)
 	{
 		case 17:
 			ctrl_active = true;
+			break;
+		case 84:
+			levels_to_text();
+			break;
 
 	}
 	
@@ -803,12 +934,39 @@ function gridChange()
 		{
 			for(var y = 0; y < numY; y += 1)
 			{
-				var imgInd = squares[grid[x][y]].imgInd;
+				var square = squares[grid[x][y]]
+				var imgInd = square.imgInd;
+				var mod = modifiers[x][y];
+				if(mod.trigger != NoModifier || mod.timer != NoModifier) console.log("square", square, "mod", mod);
+				if(mod.trigger != NoModifier) console.log("trig", mod.trigger);
+				if(mod.timer != NoModifier) console.log("time", mod.timer);
+				
+
 				drawSquare(x, y, imgInd);
+				if(square == Portal || square == PortalB)
+				{
+					drawSquare(x, y, mod.portalGroup.imgInd);
+				}
+				else if([TrampHor, TrampVrt, TrampDDn, TrampDUp].includes(square) && (mod.trigger != NoModifier || mod.timer != NoModifier))
+				{
+					if(mod.trigger != NoModifier) console.log("trig a", mod.trigger);
+					if(mod.timer != NoModifier) console.log("time a", mod.timer);
+					drawSquare(x, y, mod.direction.imgInd);
+					drawSquare(x, y, mod.inc.imgInd);
+					if(mod.trigger != NoModifier)
+					{
+						drawSquare(x, y, mod.trigger.imgInd);
+					}
+					else
+					{
+						drawSquare(x, y, mod.timer.imgInd);
+					}
+				}
 			}
 		}
 		console.log(player);
 		drawSquare(player[0], player[1], 0, playerImg);
+		
 		updateSelect();
 	}
 	//draw menu
@@ -909,6 +1067,11 @@ function drawMenu()
 	}
 }
 		
+function drawScaledSquare(CX,imgInd, x, y, l, t, sqReduc, sqSize, sqOff)
+{
+	CX.drawImage(squareImg, (imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+			l + sqOff + x * sqSize, t + sqOff + y * sqSize, sqReduc, sqReduc);
+}
 
 function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
 {
@@ -936,9 +1099,40 @@ function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
 	{
 		for(var y = 0; y < numY; y += 1)
 		{
-			var imgInd = sqCodes[level.map[y][x]].imgInd;
-			CX.drawImage(squareImg, (imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
-			l + sqOff + x * sqSize, t + sqOff + y * sqSize, sqReduc, sqReduc);
+			var square = sqCodes[level.map[y][x]];
+			var imgInd = square.imgInd;
+			drawScaledSquare(CX, imgInd, x, y, l, t, sqReduc, sqSize, sqOff)
+			
+		}
+	}
+	if(typeof(GAME_LEVELS[levelInd].specialCodes) != "undefined")
+	{
+		for(var i = 0; i < GAME_LEVELS[levelInd].specialCodes.length; i += 1)
+		{
+			var mod = GAME_LEVELS[levelInd].specialCodes[i];
+			var x = mod.x;
+			var y = mod.y;
+			var square = sqCodes[level.map[y][x]];
+			if(square == Portal || square == PortalB)
+			{
+				drawScaledSquare(CX,mod.portalGroup.imgInd, x, y, l, t, sqReduc, sqSize, sqOff);
+			}
+			else if([TrampHor, TrampVrt, TrampDDn, TrampDUp].includes(square) && (typeof(mod.trigger) != "undefined" || typeof(mod.timer) != "undefined"))
+			{
+				if(mod.trigger != NoModifier) console.log("trig a", mod.trigger);
+				if(mod.timer != NoModifier) console.log("time a", mod.timer);
+				drawScaledSquare(CX,  mod.direction.imgInd, x, y, l, t, sqReduc, sqSize, sqOff);
+				drawScaledSquare(CX,  mod.inc.imgInd, x, y, l, t, sqReduc, sqSize, sqOff);
+	
+				if(typeof(mod.trigger) != "undefined")
+				{
+					drawScaledSquare(CX, mod.trigger.imgInd, x, y, l, t, sqReduc, sqSize, sqOff);
+				}
+				else
+				{
+					drawScaledSquare(CX, mod.timer.imgInd, x, y, l, t, sqReduc, sqSize, sqOff);
+				}
+			}
 		}
 	}
 	CX.fillStyle = 'blue';
@@ -946,6 +1140,17 @@ function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
 }
 	
 	
+function getNameOfObj(obj)
+{
+	for(var v in window)
+	{ 
+	   if(window[v] === obj)
+	   {
+		   return v;
+	   }
+	}
+	return '???';
+}
 
 	
 function levels_to_text()
@@ -966,11 +1171,54 @@ function levels_to_text()
 			out_str += '\n';
 		}
 		out_str += '\t\t],\n';
+		var any_special = false;
+		if(typeof(GAME_LEVELS[i].specialCodes) != "undefined")
+		{
+			for(var j = 0; j < GAME_LEVELS[i].specialCodes.length; j += 1)
+			{
+				var mod = GAME_LEVELS[i].specialCodes[j];
+				var square = sqCodes[GAME_LEVELS[i].map[mod.y][mod.x]];
+				console.log("level", i, "square", square, "mod", mod);
+				if(square == Portal || square == PortalB)
+				{
+					if(!any_special)
+					{
+						out_str += '\t\tspecialCodes: [\n';
+						any_special = true;
+					}
+					out_str += '\t\t\t{x: ' + mod.x + ', y:' + mod.y + ', type: ' + getNameOfObj(square) + ', portalGroup: ' + getNameOfObj(mod.portalGroup) + '},\n';
+				}
+				else if(isDirTramp(square) && typeof(mod.trigger) != "undefined")
+				{
+					if(!any_special)
+					{
+						out_str += '\t\tspecialCodes: [\n';
+						any_special = true;
+					}
+					out_str += '\t\t\t{x: ' + mod.x + ', y:' + mod.y + ', trigger: ' + getNameOfObj(mod.trigger) + ', direction: ' + getNameOfObj(mod.direction) + ', inc: ' +  getNameOfObj(mod.inc) + '},\n';
+				}
+				else if(isDirTramp(square) && typeof(mod.timer) != "undefined")
+				{
+					if(!any_special)
+					{
+						out_str += '\t\tspecialCodes: [\n';
+						any_special = true;
+					}
+					out_str += '\t\t\t{x: ' + mod.x + ', y:' + mod.y + ', timer: ' + getNameOfObj(mod.timer) + ', direction: ' + getNameOfObj(mod.direction) + ', inc: ' +  getNameOfObj(mod.inc) + '},\n';
+				}
+			}
+		}
+		if(any_special)
+		{
+			out_str += '\t\t],\n';
+		}
+				
 		out_str += "\t\tplayer: [" + GAME_LEVELS[i].player + "],\n";
 		out_str += "\t\tmoves: " + GAME_LEVELS[i].moves + "\n";
 		out_str += "\t},\n\n";
 	}
 	out_str += "];\n";
+	console.log(out_str);
 	
 	return (out_str);
 }
@@ -980,13 +1228,31 @@ function add_level(type)
 {	
 	var new_level = {};
 	new_level.map = [];
+	new_level.specialCodes = [];
 	for(var y = 0; y < numY; y += 1)
 	{
 		var str = ""
 		for(var x = 0; x < numX; x += 1)
 		{
 			var letter = squareLetters[defaultSqInd];
-			if(grid[x][y] !== null) letter = squareLetters[grid[x][y]];
+			var mod = modifiers[x][y];
+			if(grid[x][y] !== null)
+			{
+				letter = squareLetters[grid[x][y]];
+				var square = sqCodes[letter];
+				if(square == Portal || square == PortalB)
+				{
+					new_level.specialCodes.push({x: x, y: y, type: square, portalGroup: mod.portalGroup});
+				}
+				else if(isDirTramp(square) && mod.timer != NoModifier)
+				{
+					new_level.specialCodes.push({x: x, y: y, timer: mod.timer, direction: mod.direction, inc: mod.inc});
+				}
+				else if(isDirTramp(square) && mod.trigger != NoModifier)
+				{
+					new_level.specialCodes.push({x: x, y: y, trigger: mod.trigger, direction: mod.direction, inc: mod.inc});
+				}
+			}
 			str += letter;
 		}
 		new_level.map.push(str);
@@ -1086,7 +1352,12 @@ function xy_limits(ind_start, ind_end)
 	}
 	return [xmin, xmax, ymin, ymax];
 }
-	
+
+
+function isDirTramp(square)
+{
+	return [TrampHor, TrampVrt, TrampDDn, TrampDUp].includes(square);
+}
 </script>
 
 

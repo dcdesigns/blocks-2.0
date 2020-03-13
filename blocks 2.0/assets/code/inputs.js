@@ -231,7 +231,7 @@ function endClick(e)
 	else if(click.act === SELECT_MOVE && click.delta[0] !== null && player.state == IDLE && !outOfMoves()) //&& not dead and moves left and blah blah
 	{
 		audioCx.resume();
-		playSound(jumpSnd);
+		playSound(ACTION_SOUNDS, jumpSnd);
 		player.history.push(vectorCopy(player.pos));
 		player.lastMatchPos = vectorCopy(player.pos);
 		player.target = click.delta;

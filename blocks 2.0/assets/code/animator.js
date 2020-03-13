@@ -39,8 +39,8 @@ function reConfigure()
 	scrn.w = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
 	scrn.h = (window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight);
 	
-	if(isFullScreen) scrn.h = Math.min(scrn.h, screen.availHeight);
-	if(isFullScreen) scrn.w = Math.min(scrn.w, screen.availWidth);
+	// if(isFullScreen) scrn.h = Math.min(scrn.h, screen.availHeight);
+	// if(isFullScreen) scrn.w = Math.min(scrn.w, screen.availWidth);
 	scrn.maj = Math.max(scrn.w, scrn.h);
 	scrn.min = Math.min(scrn.w, scrn.h);
 	
@@ -894,8 +894,8 @@ function animate()
 	//check for screen changes and redraw if necessary	
 	var now_w = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
 	var now_h = (window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight);
-	if(isFullScreen) now_h = Math.min(now_h, screen.availHeight);
-	if(isFullScreen) now_w = Math.min(now_w, screen.availWidth);
+	// if(isFullScreen) now_h = Math.min(now_h, screen.availHeight);
+	// if(isFullScreen) now_w = Math.min(now_w, screen.availWidth);
 	
 	if(rotating == false && click.act !== SELECT_ZOOM && (level.drawn == false ||(window.pageXOffset || document.documentElement.scrollLeft) !== scrn.l || 
 		(window.pageYOffset || document.documentElement.scrollTop) !== scrn.t || 
@@ -932,12 +932,36 @@ function animate()
 			{
 				anim.time = 0;
 				anim.ind += 1;
-				if(anim.ind > anim.animate.maxInd) anim.ind = anim.animate.minInd;
 				
-				drawSquare(anim.ind_x, anim.ind_y, anim.ind);
+				{	
+					if(anim.ind > anim.animate.maxInd) anim.ind = anim.animate.minInd;
+					drawSquare(anim.ind_x, anim.ind_y, anim.ind);
+				}
 			}
+			
 		}
 		
+		var backSnd = null;
+		for(var i = 0; i < level.timers.length; i += 1)
+		{
+			var timer = level.timers[i];
+			timer.time += elapsed;
+			if(timer.time >= timer.limit)
+			{
+				timer.time = 0;
+				timer.ind = (timer.ind + timer.inc * timer.direction + 4) % 4;
+				if(typeof(timer.sound) != "undefined")
+				{
+					backSnd = timer.sound;
+				}
+				console.log(timer.ind);
+				level.squares[timer.y][timer.x] = trampRotateGroup[timer.ind];
+				drawSquare(timer.x, timer.y, trampRotateGroup[timer.ind].imgInd);
+			}
+		}
+		if(backSnd !== null) playSound(BACK_SOUNDS, backSnd);
+		
+
 		
 		cx[BUT_SEL_CANV].font = (scrn.but * .2) + 'px Roboto';
 		cx[BUT_SEL_CANV].textAlign = 'center';

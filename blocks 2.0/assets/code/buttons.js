@@ -64,7 +64,7 @@ var restartBut = {
 			
 			//player.state = IDLE;
 			player.state = REWIND;
-			playSound(swoopSnd);
+			playSound(ACTION_SOUNDS, swoopSnd);
 			gameOver = false;
 			player.rewindPos = player.history[0];
 			player.history = [];
@@ -85,7 +85,7 @@ var undoBut = {
 			
 			//player.state = IDLE;
 			player.state = REWIND;
-			playSound(swoopSnd);
+			playSound(ACTION_SOUNDS, swoopSnd);
 			gameOver = false;
 			player.rewindPos = player.history.pop();
 			player.lastMatchPos = vectorCopy(player.pos);

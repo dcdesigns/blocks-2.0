@@ -88,31 +88,128 @@ function nextLevel()
 	level.squares = [];
 	level.portals = [];
 	level.animators = [];
+	level.timers = [];
+	level.triggers = [];
+	level.portals = [];
 	
+	
+	if(typeof(curLevel.specialCodes) != "undefined")
+	{
+		var backSnd = null;
+		for(var i = 0; i < curLevel.specialCodes.length; i += 1)
+		{
+			//portal: {x, y, type (a or b), portalGroup (0,1,2)}
+			//timer: {x,y, timer, time, direction, inc (1 or 2), ind, init, sound}
+			//trig: {x,y, direction, inc (1 or 2), ind, init, any: (true or false), sound}
+			var special = curLevel.specialCodes[i];
+			console.log("special", special);
+			//portal
+			if(typeof(special.portalGroup) != "undefined")
+			{
+				level.portals.push(special);
+				console.log("portal", special);
+			}
+			//trigger/timer tramps
+			else
+			{
+				var copied = {};
+				var square = sqCodes[curLevel.map[special.y][special.x]];
+				var ind;
+				for(var j = 0; j < trampRotateGroup.length; j += 1)
+				{
+					if(trampRotateGroup[j] == square)
+					{
+						ind = j;
+						break;
+					}
+				}
+				copied.x = special.x;
+				copied.y = special.y;
+				copied.ind = ind;
+				copied.init = ind;
+				copied.direction = special.direction.direction;
+				copied.inc = special.inc.inc;
+				
+				
+				//trigger tramp
+				if(typeof(special.trigger) != "undefined")
+				{
+					copied.any = special.trigger.any;
+					if(typeof(special.trigger.sound) != "undefined")
+					{
+						copied.sound = special.trigger.sound;
+					}
+					copied.trigger = special.trigger.trigger;
+					
+					level.triggers.push(copied);
+					console.log("trig", copied);
+				}
+				else if(typeof(special.timer) != "undefined")
+				{
+					copied.time = 0;
+					if(typeof(special.timer.sound) != "undefined")
+					{
+						copied.sound = special.timer.sound;
+						backSnd = copied.sound;
+					}
+					copied.limit = special.timer.limit;
+					level.timers.push(copied);
+					
+					console.log("timer", copied);
+					
+				}
+			}
+		}
+		if(backSnd != null)
+		{
+			playSound(BACK_SOUNDS, backSnd);
+		}
+	}
+	for(var i = 0; i < level.portals.length; i += 1)
+	{
+		if(typeof(level.portals[i].pair) == "undefined")
+		{
+			var found = false;
+			for(var j = i + 1; j < level.portals.length; j += 1)
+			{
+				if(level.portals[i].type == level.portals[j].type && level.portals[i].portalGroup == level.portals[j].portalGroup)
+				{
+					level.portals[i].pair = [level.portals[j].x, level.portals[j].y];
+					level.portals[j].pair = [level.portals[i].x, level.portals[i].y];
+					found = true;
+					break;
+				}
+			}
+			if(!found)
+			{
+				level.portals[i].pair = [level.portals[i].x, level.portals[i].y];
+			}
+			console.log("portal post", level.portals[i]);
+		}
+	}
+				
 	for(var y = 0; y < level.size[1]; y += 1) 
 	{
 		var row = [];
 		for(var x = 0; x < level.size[0]; x += 1)
 		{
 			var square = sqCodes[curLevel.map[y][x]];
-			row.push(square);
-			if(square == Portal) level.portals.push([x, y]);
-			
-			
-			if(square.animate !== null)
+/* 			console.log("xy", x, y, "code", curLevel.map[y][x], "square", square);
+			if(typeof(square.animate) == "undefined")  */
+			if(typeof(square.animate) != "undefined" && square.animate !== null)
 			{
-				//console.log("anim", square.animate);
 				level.animators.push({ind_x: x, ind_y: y, time: 0, ind: square.animate.minInd, animate: square.animate});
-				
-			}
+			}			
+			row.push(square);
 		}
 		level.squares.push(row);
 	}
-	//console.log(level.animators);
+	
+	console.log(level.triggers);
 	level.drawn = false;
 	player.goalLoops = 0;
 	console.log("made the level: ", level.size, level.squares[0].length, level.squares.length);
-
+	console.log(level.triggers);
 	lastTime = new Date();
 	return true;
 }
@@ -186,13 +283,34 @@ function setSquareAction()
 		{
 			//iceSnd.stop();
 			
-			if(sq.sound != null) playSound(sq.sound);
-			if(sq.theme != null && player.state == ACTIVE) playTheme(sq.theme);
+			if(sq.sound != null) playSound(ACTION_SOUNDS, sq.sound);
+			if(sq.theme != null && player.state == ACTIVE) playSound(THEME_SOUNDS, sq.theme);
 			
 			//sq.sound.play();
 		}
 		sq.act();
+		console.log("player", player.pos);
 		
+		var backSnd = null;
+		for(var i = 0; i < level.triggers.length; i += 1)
+		{
+			var trigger = level.triggers[i];
+			if((trigger.any && player.jumping) || trigger.x == player.pos[0] && trigger.y == player.pos[1])
+			{	
+				console.log("trig", trigger);
+				trigger.ind = (trigger.ind + trigger.inc * trigger.direction + 4) % 4;
+				if(typeof(trigger.sound) != "undefined")
+				{
+					backSnd = trigger.sound;
+				}	
+				level.squares[trigger.y][trigger.x] = trampRotateGroup[trigger.ind];				
+				drawSquare(trigger.x, trigger.y, trampRotateGroup[trigger.ind].imgInd);	
+			}
+		}
+		if(backSnd != null)
+		{
+			playSound(BACK_SOUNDS, backSnd);
+		}
 	}
 	else
 	{
@@ -295,7 +413,7 @@ function updatePlayer(elapsed)
 					else
 					{
 						console.log(new Date().getTime() - winStart, "seconds");
-						playSound(grassSnd);
+						playSound(ACTION_SOUNDS, grassSnd);
 						killAll();
 					}
 					player.lastMatchPos = vectorCopy(player.pos);
@@ -305,7 +423,7 @@ function updatePlayer(elapsed)
 				{
 					player.state = FALLING;
 					startFade(opacity_rate_fall);
-					playSound(fallSnd);
+					playSound(ACTION_SOUNDS, fallSnd);
 				}
 			}
 			
