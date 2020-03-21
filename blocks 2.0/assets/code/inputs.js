@@ -1,5 +1,16 @@
 
-
+function wheelEvent(event)
+{
+	if(paused)
+	{
+		console.log(event.deltaY);
+		if(event.deltaY > 0) nextBut.action();
+		else prevBut.action();/*  1 : -1;
+		if(Math.abs(event.deltaY) > 125) delta *= 2;
+		levels_menu.topInd += delta;
+		drawBase(); */
+	}
+}
 function keyEvent(event) 
 {
 	switch(event.keyCode)
@@ -53,9 +64,23 @@ function screenFlip()
 	setTimeout(function()
 	{
 		rotating = false;
+		level.drawn = false;
 		landscapeLast = 10000;
 		portraitLast = 10000;
-	}, 800);
+	}, 100);
+	
+};
+
+function screenZoom() 
+{
+	console.log("zoomevent");
+	setTimeout(function()
+	{
+		rotating = false;
+		level.drawn = false;
+		landscapeLast = 10000;
+		portraitLast = 10000;
+	}, 100);
 	
 };
 
@@ -124,40 +149,70 @@ function setActiveButton(isStart)
  
  function setActiveTarget()
 {	
-	//ignore if target was not set at start
-	if(player.state != IDLE || click.act !== SELECT_MOVE || paused) return false;
-	
-	click.delta[0] = null;
-	//console.log(flipped);
-	var adjX, adjY;
-	if(flipped == 1)
+	if(paused)
 	{
-		adjX = scrn.h - (!buttsFlipped? scrn.but : 0) - click.end[1] - scrn.sy;
-		adjY = click.end[0] - scrn.sx; 
-	}
-	else if(flipped == -1)
-	{
-		adjX = click.end[1] - scrn.sy;
-		adjY = scrn.w - (buttsFlipped? scrn.but : 0) - click.end[0] - scrn.sx; 
+		if(click.act == SELECT_MOVE)
+		{
+			click.levelInd = null;
+			if(click.end[0] < levels_menu.w && click.end[1] < levels_menu.h)
+			{				
+				click.levelInd = Math.floor(click.end[1]/levels_menu.rowHeight);
+			}
+		}	
 	}
 	else
 	{
-		adjX = click.end[0] - scrn.sx;
-		adjY = click.end[1] - scrn.sy;
-	}
-	click.delta[0] = Math.floor((adjX) / scrn.sq) - player.pos[0];
-	click.delta[1] = Math.floor((adjY) / scrn.sq) - player.pos[1];
-	//console.log("pos " , player.pos, ", delta " ,click.delta);
-	if(!validDelta(click.delta) || !onBoard(player.pos, click.delta))
-	{
+		//ignore if target was not set at start
+		if(player.state != IDLE || click.act !== SELECT_MOVE) return false;
+		
 		click.delta[0] = null;
+		//console.log(flipped);
+		var adjX, adjY;
+		if(flipped == 1)
+		{
+			adjX = scrn.h - (!buttsFlipped? scrn.but : 0) - click.end[1] - scrn.sy;
+			adjY = click.end[0] - scrn.sx; 
+		}
+		else if(flipped == -1)
+		{
+			adjX = click.end[1] - scrn.sy;
+			adjY = scrn.w - (buttsFlipped? scrn.but : 0) - click.end[0] - scrn.sx; 
+		}
+		else
+		{
+			adjX = click.end[0] - scrn.sx;
+			adjY = click.end[1] - scrn.sy;
+		}
+		click.delta[0] = Math.floor((adjX) / scrn.sq) - player.pos[0];
+		click.delta[1] = Math.floor((adjY) / scrn.sq) - player.pos[1];
+		//console.log("pos " , player.pos, ", delta " ,click.delta);
+		if(!validDelta(click.delta) || !onBoard(player.pos, click.delta, true))
+		{
+			click.delta[0] = null;
+		}
 	}
 
 }
 
+function ignoreEvent(e)
+{
+	if(e.type.indexOf("pointer") != -1)
+	{
+		pointerEvts = true;
+	}
+	
+	if(pointerEvts && (e.type.indexOf("touch") != -1 || e.type.indexOf("mouse") != -1))
+	{
+		e.preventDefault();
+		return 1;
+	}
+	return 0;
+}
 
 function startClick(e)
 {
+	if(ignoreEvent(e)) return;
+	
 	//check for mobile vs computer
 	mobile = e.type.indexOf('touch') > -1;
 	
@@ -171,6 +226,8 @@ function startClick(e)
 
 function moveClick(e)
 {	
+	if(ignoreEvent(e)) return;
+	
 	//check for mobile vs computer
 	mobile = e.type.indexOf('touch') > -1;
 
@@ -189,6 +246,8 @@ function moveClick(e)
 
 function endClick(e)
 {
+	if(ignoreEvent(e)) return;
+	
 	//zoom: toggle fullscreen (doesn't work on all platforms... looking at you ios) 
 	if(click.act === SELECT_ZOOM)
 	{
@@ -196,6 +255,7 @@ function endClick(e)
 		{
 			isFullScreen = !isFullScreen;
 			var elem = document.documentElement;
+			rotating = true;
 			if(isFullScreen)
 			{
 			 
@@ -226,16 +286,38 @@ function endClick(e)
 		butts[paused][click.but].action();
 
 	}
-	
+
+	//level select
+	else if(paused)
+	{
+		if(click.act == SELECT_MOVE && click.levelInd != null)
+		{
+			var ind = click.levelInd + levels_menu.topInd;
+			console.log("ind", ind);
+			paused = 0;
+			if(ind != level.index)
+			{	
+				gameOver = false;
+				killAll();
+				level.index = ind - 1;
+				nextLevel();
+			}
+			else
+			{
+				drawBase();
+			}
+			
+		}
+		
+	}
 	//targets
 	else if(click.act === SELECT_MOVE && click.delta[0] !== null && player.state == IDLE && !outOfMoves()) //&& not dead and moves left and blah blah
 	{
 		audioCx.resume();
-		playSound(ACTION_SOUNDS, jumpSnd);
 		player.history.push(vectorCopy(player.pos));
 		player.lastMatchPos = vectorCopy(player.pos);
 		player.target = click.delta;
-		startJump();
+		startJump(0);
 	}
 	killClick(false);
 	
@@ -271,4 +353,13 @@ function getDisplayXY(e)
 	return XY;
 }
 	
+function mobileSet(e)
+{
+	e.preventDefault();
+	mobile = false;
+}
 
+function stopIt(e)
+{
+	e.preventDefault();
+}

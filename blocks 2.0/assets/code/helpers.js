@@ -120,8 +120,11 @@ function zeroVector(size = 2)
 	return v;
 }
 
+function isDefined(prop)
+{
+	return (typeof(prop) != "undefined");
+}
 
- 
  function validDelta(delta)
  {
 	var absX = Math.abs(delta[0]);

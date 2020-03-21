@@ -17,12 +17,13 @@ const targetMillis = 3200;
 const playerMillis = 700;
 const flashMillis = 5000;
 const playerMoveRotation = 1;
-const boardBuffer = 0.7;
+const boardBuffer = 0.5;
 
 const idleWaitMillis = 30000;
 
 const maxSquare = 200;
 const maxButton = 125;
+const minMenu = 50;
 
 //how much bigger the player is at jump apex
 const playerScaleTopJump = 2;
@@ -71,6 +72,8 @@ const alpha_ice = 1;
 //constant set to disappear in one cycle
 const opacity_rate_init = .98;
 const opacity_rate_fall = .89;
+const opacity_rate_laser = .86;
+const laser_wait_frames = 20;
 
 const targetSize = 1.2;
 
@@ -81,7 +84,7 @@ const targetScale = (targetAlphaMax - targetAlphaMin) * .5;
 const optionMean = (optionAlphaMin + optionAlphaMax) / 2;
 const optionScale = (optionAlphaMax - optionAlphaMin) * .5;
 
-const imgBuffer = .02;
+const imgBuffer = .05;
 const sqBuffer = .07;
 const bridgeBufferScale = 7;
 

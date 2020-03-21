@@ -25,17 +25,17 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.08838835"
-     inkscape:cx="4007.7243"
-     inkscape:cy="2402.0977"
+     inkscape:zoom="0.125"
+     inkscape:cx="6000.8002"
+     inkscape:cy="1273.3433"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
      units="px"
-     inkscape:window-width="1536"
-     inkscape:window-height="801"
+     inkscape:window-width="2560"
+     inkscape:window-height="1377"
      inkscape:window-x="-8"
-     inkscape:window-y="514"
+     inkscape:window-y="-8"
      inkscape:window-maximized="1"
      inkscape:snap-global="true" />
   <metadata
@@ -367,5 +367,74 @@
          y="85.929077"
          style="stroke-width:0.26458332"
          id="tspan902-5">roads</tspan></text>
+    <rect
+       style="opacity:0.997;fill:#1e1e1e;fill-opacity:1;stroke:none;stroke-width:0.01000002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       id="rect113-2-7"
+       width="158.75"
+       height="158.75"
+       x="2222.5"
+       y="138.25002" />
+    <rect
+       style="opacity:0.997;fill:#585858;fill-opacity:1;stroke:none;stroke-width:0.01000002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       id="rect113-7-41"
+       width="158.75"
+       height="158.75"
+       x="2381.25"
+       y="138.25002" />
+    <rect
+       style="opacity:0.997;fill:#373737;fill-opacity:1;stroke:none;stroke-width:0.01000002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       id="rect113-2-5-6"
+       width="158.75"
+       height="158.75"
+       x="2540"
+       y="138.25002" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:28.58789635px;line-height:1.25;font-family:'Tw Cen MT Condensed Extra Bold';-inkscape-font-specification:'Tw Cen MT Condensed Extra Bold, ';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="2246.2488"
+       y="85.929092"
+       id="text936-0-4"><tspan
+         sodipodi:role="line"
+         id="tspan934-2-56"
+         x="2246.2488"
+         y="85.929092"
+         style="stroke-width:0.26458332">player </tspan><tspan
+         sodipodi:role="line"
+         x="2246.2488"
+         y="121.66396"
+         style="stroke-width:0.26458332"
+         id="tspan1024-8">top burn</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:28.58789635px;line-height:1.25;font-family:'Tw Cen MT Condensed Extra Bold';-inkscape-font-specification:'Tw Cen MT Condensed Extra Bold, ';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="2388.9041"
+       y="85.929092"
+       id="text936-0-1-0"><tspan
+         sodipodi:role="line"
+         id="tspan934-2-5-3"
+         x="2388.9041"
+         y="85.929092"
+         style="stroke-width:0.26458332">player </tspan><tspan
+         sodipodi:role="line"
+         x="2388.9041"
+         y="121.66396"
+         style="stroke-width:0.26458332"
+         id="tspan1022-1">side A burn</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:28.58789635px;line-height:1.25;font-family:'Tw Cen MT Condensed Extra Bold';-inkscape-font-specification:'Tw Cen MT Condensed Extra Bold, ';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="2548.3381"
+       y="85.929092"
+       id="text936-0-1-5-4"><tspan
+         sodipodi:role="line"
+         id="tspan934-2-5-1-0"
+         x="2548.3381"
+         y="85.929092"
+         style="stroke-width:0.26458332">player </tspan><tspan
+         sodipodi:role="line"
+         x="2548.3381"
+         y="121.66396"
+         style="stroke-width:0.26458332"
+         id="tspan1020-4">side B burn</tspan></text>
   </g>
 </svg>

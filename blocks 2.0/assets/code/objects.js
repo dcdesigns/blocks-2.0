@@ -3,6 +3,7 @@ var ios = !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
 var flipped;
 var buttsFlipped;
 var mobile = true;
+var pointerEvts = false;
 var fullS = false;
 var scrollAmt = 150;
 var SELECT_ZOOM_COL = [0,0];
@@ -91,9 +92,12 @@ function nextLevel()
 	level.timers = [];
 	level.triggers = [];
 	level.portals = [];
+	level.toggles = [];
+	level.laserMatch = null;
+	level.laserFrames = 0;
 	
 	
-	if(typeof(curLevel.specialCodes) != "undefined")
+	if(isDefined(curLevel.specialCodes))
 	{
 		var backSnd = null;
 		for(var i = 0; i < curLevel.specialCodes.length; i += 1)
@@ -102,12 +106,12 @@ function nextLevel()
 			//timer: {x,y, timer, time, direction, inc (1 or 2), ind, init, sound}
 			//trig: {x,y, direction, inc (1 or 2), ind, init, any: (true or false), sound}
 			var special = curLevel.specialCodes[i];
-			console.log("special", special);
+			//console.log("special", special);
 			//portal
-			if(typeof(special.portalGroup) != "undefined")
+			if(isDefined(special.portalGroup))
 			{
 				level.portals.push(special);
-				console.log("portal", special);
+				//console.log("portal", special);
 			}
 			//trigger/timer tramps
 			else
@@ -132,22 +136,26 @@ function nextLevel()
 				
 				
 				//trigger tramp
-				if(typeof(special.trigger) != "undefined")
+				if(isDefined(special.trigger))
 				{
 					copied.any = special.trigger.any;
-					if(typeof(special.trigger.sound) != "undefined")
+					copied.trigger = special.trigger.trigger;
+					if(isDefined(special.trigger.sound))
 					{
 						copied.sound = special.trigger.sound;
 					}
-					copied.trigger = special.trigger.trigger;
+					if(isDefined(special.trigger.onOff))
+					{
+						copied.onOff = special.trigger.onOff;
+					}
 					
 					level.triggers.push(copied);
 					console.log("trig", copied);
 				}
-				else if(typeof(special.timer) != "undefined")
+				else if(isDefined(special.timer))
 				{
 					copied.time = 0;
-					if(typeof(special.timer.sound) != "undefined")
+					if(isDefined(special.timer.sound))
 					{
 						copied.sound = special.timer.sound;
 						backSnd = copied.sound;
@@ -155,7 +163,7 @@ function nextLevel()
 					copied.limit = special.timer.limit;
 					level.timers.push(copied);
 					
-					console.log("timer", copied);
+					//console.log("timer", copied);
 					
 				}
 			}
@@ -167,7 +175,7 @@ function nextLevel()
 	}
 	for(var i = 0; i < level.portals.length; i += 1)
 	{
-		if(typeof(level.portals[i].pair) == "undefined")
+		if(!isDefined(level.portals[i].pair))
 		{
 			var found = false;
 			for(var j = i + 1; j < level.portals.length; j += 1)
@@ -184,7 +192,7 @@ function nextLevel()
 			{
 				level.portals[i].pair = [level.portals[i].x, level.portals[i].y];
 			}
-			console.log("portal post", level.portals[i]);
+			//console.log("portal post", level.portals[i]);
 		}
 	}
 				
@@ -194,22 +202,34 @@ function nextLevel()
 		for(var x = 0; x < level.size[0]; x += 1)
 		{
 			var square = sqCodes[curLevel.map[y][x]];
+			/* if(square == Laser)
+			{
+				level.lasers.push({pos: [x,y], on: false});
+			} */
 /* 			console.log("xy", x, y, "code", curLevel.map[y][x], "square", square);
-			if(typeof(square.animate) == "undefined")  */
-			if(typeof(square.animate) != "undefined" && square.animate !== null)
+			if(isDefined(square.animate) == "undefined")  */
+			if(isDefined(square.animate) && square.animate !== null)
 			{
 				level.animators.push({ind_x: x, ind_y: y, time: 0, ind: square.animate.minInd, animate: square.animate});
-			}			
+			}
+			var laser = null;
+			if(square == Laser) laser = Laser;
+			else if(square == LaserCover) laser = LaserCover;
+			if([Laser, LaserCover, OnSwitch, OffSwitch].includes(square))
+			{
+				level.toggles.push({pos: [x,y], type: square});
+			}
 			row.push(square);
 		}
 		level.squares.push(row);
 	}
+
 	
-	console.log(level.triggers);
+	//console.log(level.triggers);
 	level.drawn = false;
 	player.goalLoops = 0;
 	console.log("made the level: ", level.size, level.squares[0].length, level.squares.length);
-	console.log(level.triggers);
+	//console.log(level.triggers);
 	lastTime = new Date();
 	return true;
 }
@@ -267,19 +287,28 @@ var click = {
 	thetaQ: 0,
 	dist: 0,
 	delta: [0,0],
-	sect: 0
+	sect: 0,
+	levelInd: null
+};
+
+var levels_menu = {
+	rowWidth: 0,
+	rowHeight: minMenu,
+	topInd: 0,
+	selected: -1,
+		
 };
 
 
-function setSquareAction()
+function setSquareAction(rounded)
 {
 	
-	if(onBoard(player.pos))
+	if(onBoard(rounded))
 	{
-		var sq = level.squares[player.pos[1]][player.pos[0]];
+		var sq = level.squares[rounded[1]][rounded[0]];
 		var prevSq = level.squares[player.lastMatchPos[1]][player.lastMatchPos[0]];
-						
-		if(player.jumping || (prevSq != sq || sq != Ice))
+		/* 				
+		if((player.jumping) || (prevSq != sq))
 		{
 			//iceSnd.stop();
 			
@@ -287,30 +316,38 @@ function setSquareAction()
 			if(sq.theme != null && player.state == ACTIVE) playSound(THEME_SOUNDS, sq.theme);
 			
 			//sq.sound.play();
-		}
-		sq.act();
-		console.log("player", player.pos);
-		
+		} */
 		var backSnd = null;
-		for(var i = 0; i < level.triggers.length; i += 1)
+		var isSwitch = (sq == OffSwitch || sq == OnSwitch);
+		console.log('switch', isSwitch);
+		if(player.jumping)
 		{
-			var trigger = level.triggers[i];
-			if((trigger.any && player.jumping) || trigger.x == player.pos[0] && trigger.y == player.pos[1])
+			for(var i = 0; i < level.triggers.length; i += 1)
 			{	
+				var trigger = level.triggers[i];
 				console.log("trig", trigger);
-				trigger.ind = (trigger.ind + trigger.inc * trigger.direction + 4) % 4;
-				if(typeof(trigger.sound) != "undefined")
-				{
-					backSnd = trigger.sound;
-				}	
-				level.squares[trigger.y][trigger.x] = trampRotateGroup[trigger.ind];				
-				drawSquare(trigger.x, trigger.y, trampRotateGroup[trigger.ind].imgInd);	
+				if((isSwitch && isDefined(trigger.onOff)) || trigger.any || (trigger.trigger && trigger.x == player.pos[0] && trigger.y == player.pos[1]))
+				{	
+					trigger.ind = (trigger.ind + trigger.inc * trigger.direction + 4) % 4;
+					if(isDefined(trigger.sound))
+					{
+						backSnd = trigger.sound;
+					}	
+					level.squares[trigger.y][trigger.x] = trampRotateGroup[trigger.ind];				
+					drawSquare(trigger.x, trigger.y, trampRotateGroup[trigger.ind].imgInd);	
+				}
 			}
 		}
+		
 		if(backSnd != null)
 		{
 			playSound(BACK_SOUNDS, backSnd);
 		}
+		sq.act(sq, prevSq);
+		player.lastMatchPos = vectorCopy(roundVector(player.pos));
+		//console.log("player", player.pos);
+		
+		
 	}
 	else
 	{
@@ -324,6 +361,7 @@ function updatePlayer(elapsed)
 {
 	if(player.state == REWIND)
 	{
+		level.laserMatch = null;
 		player.pos[0] += (player.rewindPos[0] - player.pos[0]) * rewindRate;
 		player.pos[1] += (player.rewindPos[1] - player.pos[1]) * rewindRate;
 		player.z += -player.z * rewindRate;
@@ -360,9 +398,11 @@ function updatePlayer(elapsed)
 		{
 			player.z = Math.max(0, player.z);
 			
+			
 		}
 		else
 		{
+			level.laserMatch = null;
 			if(player.z <= fallLimit)
 			{
 				player.z = fallLimit;
@@ -386,14 +426,18 @@ function updatePlayer(elapsed)
 		}
 		
 		//check for landing on a square
-		if([ACTIVE, WINNING].includes(player.state) && player.z == 0)
+		if([ACTIVE, WINNING, BURNING].includes(player.state))
 		{
 			//reset accel in case winning was active
-			player.accel = z_accel;
 			
-			if(player.jumping == false && player.z == 0)
+			if(player.z == 0)
 			{
-				player.z_vel = 0;
+				player.accel = z_accel;
+			
+				if(player.jumping == false && player.z == 0)
+				{
+					player.z_vel = 0;
+				}
 			}
 			
 			//see how far we've moved from the last known square
@@ -402,43 +446,65 @@ function updatePlayer(elapsed)
 			//landed from a jump or slid to a new square
 			if(player.jumping || dist[0] >= 1 || dist[1] >= 1)
 			{
-				player.pos = roundVector(player.pos);
-				//console.log("square", player.pos[0], player.pos[1], player.vel[0], player.vel[1]);
-				if(on_board)
+				
+				//console.log(player.jumping, dist);
+				var rounded = roundVector(player.pos);
+				if(player.z == 0)	
 				{
-					if(player.history.length) 
+					level.laserMatch = null;
+					
+					player.pos = vectorCopy(rounded);
+					//console.log("square", player.pos[0], player.pos[1], player.vel[0], player.vel[1]);
+					if(on_board)
 					{
-						setSquareAction();
+						if(player.history.length) 
+						{
+							//console.log("down");
+							setSquareAction(rounded);
+						}
+						else
+						{
+							console.log(new Date().getTime() - winStart, "seconds");
+							playSound(ACTION_SOUNDS, grassSnd);
+							killAll();
+							player.lastMatchPos = vectorCopy(player.pos);
+						}
+						
+						
 					}
 					else
 					{
-						console.log(new Date().getTime() - winStart, "seconds");
-						playSound(ACTION_SOUNDS, grassSnd);
-						killAll();
+						player.state = FALLING;
+						startFade(opacity_rate_fall);
+						playSound(ACTION_SOUNDS, fallSnd);
 					}
-					player.lastMatchPos = vectorCopy(player.pos);
-					
+					//console.log("down",rounded[0], rounded[1], level.laserMatch);
 				}
-				else
+				else if(on_board && (dist[0] >= .6 || dist[1] >= .6))
 				{
-					player.state = FALLING;
-					startFade(opacity_rate_fall);
-					playSound(ACTION_SOUNDS, fallSnd);
+					
+					level.laserMatch = null;
+					var sq = level.squares[rounded[1]][rounded[0]];
+					if(isDefined(sq.airAct)) sq.airAct();
+					player.lastMatchPos = vectorCopy(rounded);
+					//console.log("up",rounded[0], rounded[1], level.laserMatch);
+					//if(sq == Laser) setSquareAction(rounded);
 				}
 			}
-			
 		}
 	}
 }
 			
 	
 
- function onBoard(pos = player.pos, delta = [0,0])
+ function onBoard(pos = player.pos, delta = [0,0], extraBorder = false)
  {
 	var newPos = vectorAdd(pos, delta);
 	var ret = false;
+	var extra = 0;
+	if(extraBorder) extra = 1;
 
-	if((newPos[0] > -boardBuffer) && (newPos[0] < level.size[0] - 1 + boardBuffer) && (newPos[1] > -boardBuffer) && newPos[1] < (level.size[1] - 1 + boardBuffer))
+	if(extraBorder || ((newPos[0] > -(boardBuffer + extra)) && (newPos[0] < level.size[0] - 1 + extra + boardBuffer) && (newPos[1] > -(boardBuffer + extra)) && newPos[1] < (level.size[1] - 1 + extra + boardBuffer)))
 	{
 		ret = true;
 		//if(!Number.isInteger(newPos[0]) || !Number.isInteger(newPos[1]) || level.squares[newPos[1]][newPos[0]] !== EmptySquare) ret = true;
@@ -494,14 +560,18 @@ function killFade()
 	player.fading = false;
 }
 
-function killAll()
+function killAll(force = true)
 {
 	killXY();
 	killZ();
 	killSpin();
-	killFade();
+	
 	player.theta = 0;
-	player.state = IDLE;
+	if(force || ![BURNING].includes(player.state))
+	{
+		player.state = IDLE;
+		killFade();
+	}
 	player.jumping = false;
 }
 
@@ -522,15 +592,20 @@ function slowSpin(alpha = alpha_slow)
 	player.alpha = alpha;
 }
 
-function startJump(jumpVel = z_vel_init, spinVel = omega_init)
+function startJump(jumpType = 1, jumpVel = z_vel_init, spinVel = omega_init)
 {
+	if(jumpType == 0) playSound(ACTION_SOUNDS, jumpSnd);
+	else if(jumpType == 1) playSound(ACTION_SOUNDS, trampSnd);
+	else if(jumpType == 2) playSound(ACTION_SOUNDS, winSnd);
+	
+	
 	player.z_vel = jumpVel;
 	player.jumping = true;
 	player.vel[0] += player.target[0] / playerMillis;
 	player.vel[1] += player.target[1] / playerMillis;
 	player.target = zeroVector();
 	startSpin(spinVel);
-	if(jumpVel < z_vel_init_goal) player.state = ACTIVE;
+	if(jumpVel < z_vel_init_goal && player.state != BURNING) player.state = ACTIVE;
 }
 
 

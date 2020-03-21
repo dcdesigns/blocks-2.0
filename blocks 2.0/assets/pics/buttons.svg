@@ -403,15 +403,15 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="2560"
-     inkscape:window-height="1377"
+     inkscape:window-width="1920"
+     inkscape:window-height="1001"
      id="namedview4"
      showgrid="false"
-     inkscape:zoom="0.70710678"
-     inkscape:cx="887.49645"
-     inkscape:cy="567.62237"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
+     inkscape:zoom="2.8284271"
+     inkscape:cx="838.6818"
+     inkscape:cy="65.190603"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg2"
      units="px" />
@@ -606,13 +606,13 @@
   </g>
   <path
      style="fill:#878787;fill-opacity:1;stroke:none;stroke-width:0.57291669px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-     d="m 881.52023,50.000024 c -3.5e-4,17.40788 -14.11214,31.51967 -31.52004,31.52005 -17.40825,1.2e-4 -31.52056,-14.11182 -31.5209,-31.52005 -1.2e-4,-17.40856 14.11236,-31.520152 31.5209,-31.520095 17.40824,4.01e-4 31.52015,14.111885 31.52004,31.520095 z m -11.86986,-10.10601 -39.30123,-0.0712 19.65019,27.42868 z"
+     d="m 918.47926,50.000024 c 3.5e-4,17.40788 14.11214,31.51967 31.52004,31.52005 17.40825,1.2e-4 31.52056,-14.11182 31.5209,-31.52005 1.2e-4,-17.40856 -14.11236,-31.520152 -31.5209,-31.520095 -17.40824,4.01e-4 -31.52015,14.111885 -31.52004,31.520095 z m 11.86986,-10.10601 39.30123,-0.0712 -19.65019,27.42868 z"
      id="path4679-32-4-5-8"
      inkscape:connector-curvature="0" />
   <path
      inkscape:connector-curvature="0"
      style="fill:#878787;fill-opacity:1;stroke:none;stroke-width:0.57291669px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-     d="m 981.5202,50.000004 c -4.1e-4,-17.4079 -14.11215,-31.519699 -31.52005,-31.520043 -17.40824,-1.71e-4 -31.52055,14.111793 -31.52095,31.520043 -1.2e-4,17.40859 14.11237,31.5201 31.52095,31.52004 17.40819,-4e-4 31.52016,-14.11186 31.52005,-31.52004 z m -11.86986,10.10602 -39.30128,0.0712 19.65018,-27.42867 z"
+     d="m 818.47929,50.000004 c 4.1e-4,-17.4079 14.11215,-31.519699 31.52005,-31.520043 17.40824,-1.71e-4 31.52055,14.111793 31.52095,31.520043 1.2e-4,17.40859 -14.11237,31.5201 -31.52095,31.52004 -17.40819,-4e-4 -31.52016,-14.11186 -31.52005,-31.52004 z m 11.86986,10.10602 39.30128,0.0712 -19.65018,-27.42867 z"
      id="path4679-32-4-5-8-1" />
   <path
      sodipodi:type="star"

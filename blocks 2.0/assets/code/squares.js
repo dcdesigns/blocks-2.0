@@ -4,10 +4,11 @@
 var Grass = {
 	imgInd: 0,
 	animate: null,
-	sound: grassSnd,
 	act: function()
 	{
-		killAll();
+		//if([ACTIVE, BURNING].includes(player.state)) 
+		playSound(ACTION_SOUNDS, grassSnd);
+		killAll(false);
 	}
 };
 
@@ -18,31 +19,53 @@ var Goal = {
 	theme: winTheme,
 	act:  function()
 	{
-		killXY();
-		if(player.state == ACTIVE)
+		if(player.state == BURNING)
 		{
+			playSound(ACTION_SOUNDS, grassSnd);
+			killAll(false);
+		}
+		else
+		{
+			killXY();
+			if(player.state == ACTIVE)
+			{
+				playSound(THEME_SOUNDS, winTheme);
+				player.goalLoops = 0;
+				winStart = new Date().getTime();
+			}
 			
-			player.goalLoops = 0;
-			winStart = new Date().getTime();
+			startJump(2, z_vel_init, omega_win);
+			player.state = WINNING;
+			if(++player.goalLoops > 2 && !gameOver) 
+			{
+				//playSound(THEME_SOUNDS, winTheme);
+				player.z_vel = z_vel_init_load;	
+				player.omega = omega_load;
+				player.accel = load_z_accel;
+			}
 		}
-		
-		startJump(z_vel_init, omega_win);
-		player.state = WINNING;
-		if(++player.goalLoops > 2 && !gameOver) 
-		{
-			player.z_vel = z_vel_init_load;	
-			player.omega = omega_load;
-			player.accel = load_z_accel;
-		}
+	}
+};
+
+var EmptySquare = {
+	imgInd:  2,
+	animate: null,
+	act:  function()
+	{
+		playSound(ACTION_SOUNDS, fallSnd);
+		killXY();
+		player.state = FALLING;
+		startFade(opacity_rate_fall);
+		//startFade();
 	}
 };
 
 var Lava = {
 	imgInd:  3,
 	animate: null, //{time: 500, minInd: 2, maxInd: 4},
-	sound: lavaSnd,
 	act:  function()
 	{
+		if(player.state != BURNING) playSound(ACTION_SOUNDS, lavaSnd);
 		killXY();
 		startFade();
 		slowSpin();
@@ -53,23 +76,94 @@ var Lava = {
 };
 
 var Ice = {
-	imgInd:  5,
+	imgInd:  4,
 	animate: null,
-	sound: iceSnd,
-	act:  function()
+	act:  function(nowSq, prevSq)
 	{
+		if(player.jumping || (nowSq != prevSq)) playSound(ACTION_SOUNDS, iceSnd);
 		//console.log("ice");
 		if(!vectorNonZero(player.vel))
 		{
-			killAll();
+			killAll(false);
 		}
 		player.jumping = false;
 		slowSpin(alpha_ice);
 	}
 };
 
+var Laser = {
+	imgInd: 5,
+	animate: null, //{time: 500, minInd: 2, maxInd: 4},
+	airAct: function()
+	{
+		level.laserFrames = 0;
+		level.laserMatch = roundVector(player.pos);
+		//startFade(opacity_rate_laser);
+		player.state = BURNING;
+		slowSpin();
+		stopSound(ACTION_SOUNDS);
+		playSound(BACK_SOUNDS, laserSnd); //todo make a laser sizzle sound
+		//playSound(BACK_SOUNDS, lavaSnd);
+	},
+	act:  function()
+	{
+		level.laserMatch = roundVector(player.pos);
+		if(player.state != BURNING)
+		{
+			level.laserFrames = 0;
+			//startFade(opacity_rate_laser);
+			player.state = BURNING;
+			stopSound(ACTION_SOUNDS);
+			playSound(BACK_SOUNDS, laserSnd);
+			//playSound(BACK_SOUNDS, lavaSnd); //todo make a laser sizzle sound
+		}
+		killSpin();
+		player.jumping = false;
+		killXY();
+	}
+};
+
+var LaserCover = {
+	imgInd: 6,
+	animate: null,
+	act: function()
+	{
+		playSound(ACTION_SOUNDS, clankSnd);
+		killAll(false);
+	}
+};
+
+var OffSwitch = {
+	imgInd: 7,
+	animate: null,
+	act: function()
+	{
+		playSound(ACTION_SOUNDS, onSnd);
+		killAll(false);
+		var newSq = OnSwitch;
+		level.squares[player.pos[1]][player.pos[0]] = newSq;
+		drawSquare(player.pos[0], player.pos[1], newSq.imgInd);	
+		toggleLasers();
+	}
+}
+
+var OnSwitch = {
+	imgInd: 8,
+	animate: null,
+	act: function()
+	{
+		playSound(ACTION_SOUNDS, offSnd);
+		killAll(false);
+		var newSq = OffSwitch;
+		level.squares[player.pos[1]][player.pos[0]] = newSq;
+		drawSquare(player.pos[0], player.pos[1], newSq.imgInd);	
+		toggleLasers();
+	}
+}
+
 function portalAction()
 {
+	
 	for(var i = 0; i < level.portals.length; i += 1)
 	{
 		if(vectorEqual(player.pos, [level.portals[i].x, level.portals[i].y]))
@@ -78,24 +172,15 @@ function portalAction()
 			break;
 		}
 	}
-	player.lastMatchPos = vectorCopy(player.pos);
-	if(player.jumping) startJump();
+/* 	player.lastMatchPos = vectorCopy(player.pos);
+	console.log(player.pos, player.lastMatchPos); */
+	playSound(ACTION_SOUNDS, portalSnd);
+	if(player.jumping) startJump(3);
 }
 	
 
 var Portal = {
-	imgInd: 6,
-	sound: portalSnd,
-	animate: {time: 100, minInd: 6, maxInd: 8},
-	act: function()
-	{
-		portalAction();
-	}
-};
-
-var PortalB = {
 	imgInd: 9,
-	sound: portalSnd,
 	animate: {time: 100, minInd: 9, maxInd: 11},
 	act: function()
 	{
@@ -103,32 +188,53 @@ var PortalB = {
 	}
 };
 
-/* var Boost = {
-	imgInd:  9,
-	animate: null,
-	act:  function()
+var PortalB = {
+	imgInd: 12,
+	animate: {time: 100, minInd: 12, maxInd: 14},
+	act: function()
 	{
-		player.jumping = false;
-	}
-}; */
-
-var EmptySquare = {
-	imgInd:  2,
-	animate: null,
-	sound: fallSnd,
-	act:  function()
-	{
-		killXY();
-		player.state = FALLING;
-		startFade(opacity_rate_fall);
-		//startFade();
+		portalAction();
 	}
 };
 
+
+
+
+
+function toggleLasers()
+{
+	var snd = false;
+	for(var y = 0; y < level.squares.length; y += 1)
+	{
+		for(var x = 0; x < level.squares[0].length; x += 1)
+		{
+			var newSq = null;
+			if(level.squares[y][x] == Laser)
+			{
+				newSq = LaserCover;
+			}
+			else if(level.squares[y][x] == LaserCover)
+			{
+				newSq = Laser;
+			}
+			if(newSq != null) 
+			{
+				level.squares[y][x] = newSq;
+				drawSquare(x, y, newSq.imgInd);
+				snd = true;
+			}
+		}
+	}
+	if(snd)
+	{
+		playSound(BACK_SOUNDS, gearSnd);
+	}
+}
+			
+
 var TrampReg = {
-	imgInd:  12,
+	imgInd:  15,
 	animate: null,
-	sound: trampSnd,
 	act:  function()
 	{
 		startJump();
@@ -136,9 +242,8 @@ var TrampReg = {
 };
 
 var TrampHor = {
-	imgInd:  13,
+	imgInd:  16,
 	animate: null,
-	sound: trampSnd,
 	act:  function()
 	{
 		player.vel[1] = -player.vel[1];
@@ -147,9 +252,8 @@ var TrampHor = {
 };
 
 var TrampVrt = {
-	imgInd:  14,
+	imgInd:  17,
 	animate: null,
-	sound: trampSnd,
 	act:  function()
 	{
 		player.vel[0] = -player.vel[0];
@@ -158,9 +262,8 @@ var TrampVrt = {
 };
 
 var TrampDDn = {
-	imgInd:  15,
+	imgInd:  18,
 	animate: null,
-	sound: trampSnd,
 	act:  function()
 	{
 		player.vel = [player.vel[1], player.vel[0]];
@@ -169,9 +272,8 @@ var TrampDDn = {
 };
 
 var TrampDUp = {
-	imgInd:  16,
+	imgInd:  19,
 	animate: null,
-	sound: trampSnd,
 	act:  function()
 	{
 		player.vel = [-player.vel[1], -player.vel[0]];
@@ -180,9 +282,8 @@ var TrampDUp = {
 };
 
 var TrampClockwise = {
-	imgInd:  17,
+	imgInd:  20,
 	animate: null,
-	sound: trampSnd,
 	act:  function()
 	{
 		player.vel = [player.vel[1], -player.vel[0]];
@@ -191,9 +292,8 @@ var TrampClockwise = {
 };
 
 var TrampCounterClockwise = {
-	imgInd:  18,
+	imgInd:  21,
 	animate: null,
-	sound: trampSnd,
 	act:  function()
 	{
 		player.vel = [-player.vel[1], player.vel[0]];
@@ -202,104 +302,84 @@ var TrampCounterClockwise = {
 };
 
 var trampRotateGroup = [TrampHor, TrampDDn, TrampVrt, TrampDUp];
-
+function isDirTramp(square)
+{
+	return trampRotateGroup.includes(square);
+}
 
 //square modifiers
 
 //specifically for directional tramps
 var RotateClockwise = {
-	imgInd: 19,
+	imgInd: 22,
 	direction: 1
 };
 var RotateCounterClockwise = {
-	imgInd: 20,
+	imgInd: 23,
 	direction: -1
 };
 
 var RotateSingle = {
-	imgInd: 21,
+	imgInd: 24,
 	inc: 1
 };
 
 var RotateDouble = {
-	imgInd: 22,
+	imgInd: 25,
 	inc: 2
 };
 
 var NoModifier = {
-	imgInd: 29,
+	imgInd: 26,
 	ignore: true
 };
 
 var JumpTrigger = {
-	imgInd: 23,
+	imgInd: 27,
 	trigger: true,
 	any: false,
-	sound: swoopSnd,
+	sound: gearSnd,
 };
 
 var AnyJumpTrigger = {
-	imgInd: 24,
+	imgInd: 28,
 	trigger: true,
 	any: true,
-	sound: swoopSnd,
+	sound: gearSnd,
 };
 
 var TimerTrigger = {
-	imgInd: 25,
+	imgInd: 29,
 	limit: 1500,
-	sound: swoopSnd,
+	sound: gearSnd,
 };
 
 
+var SwitchTrigger = {
+	imgInd: 30,
+	trigger: false,
+	any: false,
+	onOff: true,
+	sound: gearSnd
+};
+
 //specifically for portals
 var PortalZero = {
-	imgInd: 26,
+	imgInd: 31,
 	portalGroup: 0,
 };
 
 var PortalOne = {
-	imgInd: 27,
+	imgInd: 32,
 	portalGroup: 0,
 };
 
 var PortalTwo = {
-	imgInd: 28,
+	imgInd: 33,
 	portalGroup: 0,
 };
 
 
-/* var TimerTrampCW = {
-	imgInd: 19,
-	animate: {time: 1500, ind: 0, group: [TrampHor, TrampDDn, TrampVrt, TrampDUp], sound: swoopSnd}
-};
-
-var TimerTrampCCW = {
-	imgInd: 20,
-	animate: {time: TimerTrampCW.animate.time, ind: 0, group: [TrampHor, TrampDUp, TrampVrt, TrampDDn], sound: TimerTrampCW.animate.sound}
-};
-
-var TriggerTrampCW = {
-	imgInd: 21,
-	animate: {trigger: 1, ind: 0, group: [TrampHor, TrampDDn, TrampVrt, TrampDUp], sound: swoopSnd}
-};
-
-var TriggerTrampCCW = {
-	imgInd: 22,
-	animate: {trigger: 1, ind: 0, group: [TrampHor, TrampDUp, TrampVrt, TrampDDn], sound: TriggerTrampCW.animate.sound}
-};
-
-var TriggerAllTrampCW = {
-	imgInd: 23,
-	animate: {trigger: 'all', ind: 0, group: [TrampHor, TrampDDn, TrampVrt, TrampDUp], sound: swoopSnd}
-};
-
-var TriggerAllTrampCCW = {
-	imgInd: 24,
-	animate: {trigger: 'all', ind: 0, group: [TrampHor, TrampDUp, TrampVrt, TrampDDn], sound: TriggerTrampCW.animate.sound}
-};
-
- */
 
 
 
@@ -319,12 +399,17 @@ var sqCodes = {
 	"/": TrampDUp,
 	"W": TrampClockwise,
 	"C": TrampCounterClockwise,
+	"Z": Laser,
+	"K": LaserCover,
+	"F": OffSwitch,
+	"O": OnSwitch,
 	
 };
 
 var modObjects = [
 	NoModifier,
 	TimerTrigger,
+	SwitchTrigger,
 	JumpTrigger,
 	AnyJumpTrigger,
 	RotateClockwise,

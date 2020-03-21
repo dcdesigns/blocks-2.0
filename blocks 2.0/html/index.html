@@ -5,7 +5,7 @@
 
 <body>
 
-<meta name="viewport" content="width=device-width, height=device-height,  initial-scale=1.0, user-scalable=no, user-scalable=0;"/>
+<meta name="viewport" content="width=device-width, height=device-height,  initial-scale=1.0, user-scalable=no, user-scalable=0"/>
 <div id="canvDiv" class="unselectable" style="position:absolute; left: 0, top: 0;">
 	<canvas id="canv0" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
 	<canvas id="canv1" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
@@ -41,6 +41,9 @@
 	var COLOR_TARGET_LINES= '';
 	var COLOR_LEVEL_TEXT= '';
 	var COLOR_ROADS= '';
+	var COLOR_PLAEYER_TOP_BURN = '';
+	var COLOR_PLAYER_SIDEA_BURN= '';
+	var COLOR_PLAYER_SIDEB_BURN= '';
 	
 	//enums
 	const GROUND = 0;
@@ -101,7 +104,12 @@
 	var winSnd = 7;
 	var portalSnd = 8;
 	var winTheme = 9;
-	var gearSnd = 10;
+	var gearSnd = 10
+	var laserSnd = 11;
+	var onSnd = 12;
+	var offSnd = 13;
+	var clankSnd = 14;
+
 	
 	var soundFile = 'blocks/audio/gameSounds.mp3';
 	var soundOrder = [
@@ -115,7 +123,12 @@
 		[winSnd, 1],
 		[iceSnd, 11.5],
 		[winTheme, 4],
-		[gearSnd, .2],
+		[gearSnd, .5],
+		[laserSnd, 2],
+		[onSnd, 1],
+		[offSnd, 1],
+		[clankSnd, .5]
+
 	];
 
 	
@@ -204,10 +217,14 @@
 		
 	}
 	
+	function stopSound(track)
+	{
+		if(audio_tracks[track]) audio_tracks[track].stop();
+	}
 	
 	function playSound(track, snd) 
 	{
-		if(audio_tracks[track]) audio_tracks[track].stop();
+		stopSound(track);
 		audio_tracks[track] = audioCx.createBufferSource();
 		audio_tracks[track].buffer = myBuffer;
 		audio_tracks[track].connect(g);
@@ -227,7 +244,7 @@
 				strt += len;
 			}
 		}
-		console.log("playing sound", strt, len);
+		//console.log("playing sound", strt, len);
 		audio_tracks[track].start(0, strt, len);
 	}
 
@@ -359,7 +376,7 @@
 		var full = colorsImg.height;
 		var offset = full * (1 - buff);
 		
-		for(var i = 0; i <= 13; i += 1)
+		for(var i = 0; i <= 16; i += 1)
 		{
 			cx[GROUND].drawImage(colorsImg, full * i + offset, offset, offset, offset, 0,0,60,60);
 			var imgData = cx[GROUND].getImageData(5,5,20,20);
@@ -387,6 +404,9 @@
 				case 11: COLOR_LEVEL_TEXT = rgb; break;
 				case 12: COLOR_BUILDING_TOP = rgb; break;
 				case 13: COLOR_ROADS = rgb; break;
+				case 14: COLOR_PLAYER_TOP_BURN = rgb; break;
+				case 15: COLOR_PLAYER_SIDEA_BURN = rgb; break;
+				case 16: COLOR_PLAYER_SIDEB_BURN = rgb; break;
 			}
 				
 		}
@@ -445,11 +465,22 @@
 		document.addEventListener("mouseup", endClick);
 		document.addEventListener("mouseout", killClick);
 		
+		document.addEventListener("pointerdown", startClick);
+		document.addEventListener("pointermove", moveClick);
+		document.addEventListener("pointerup", endClick);
+		document.addEventListener("pointerout", killClick);
+		document.addEventListener("mousemove", mobileSet);
+		
+		document.addEventListener("onwheel" in document ? "wheel" : "mousewheel", wheelEvent);
+		
 		//keys
 		document.addEventListener('keydown', keyEvent);
 
 		//screen rotate
 		window.addEventListener("orientationchange", screenFlip);
+		["", "webkit", "moz", "ms"].forEach(
+			prefix => document.addEventListener(prefix+"fullscreenchange", screenZoom, false)
+		);
 		
 		setColors();
 		
