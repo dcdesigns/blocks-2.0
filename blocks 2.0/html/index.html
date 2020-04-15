@@ -15,7 +15,8 @@
 	<canvas id="canv5" style="position: absolute; left: 0; top: 0; z-index: 5;"></canvas>
 	<canvas id="canv6" style="position: absolute; left: 0; top: 0; z-index: 6;"></canvas>
 	<canvas id="canv7" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>
-	<canvas id="canv8" oncontextmenu="return false;" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>	
+	<canvas id="canv8" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>
+	<canvas id="canv9" oncontextmenu="return false;" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>	
 </div>
 
 <script>
@@ -25,6 +26,15 @@
 	const color_load_base = 'gray';
 	const color_load_bar = 'RGB(25,124,247)'
 	var winStart;
+	
+	console.log("Page location is " + window.location.href);
+	var urlStr = window.location.href;
+	var piServer = false;
+	if(urlStr.indexOf("unreclaimed") > -1 || urlStr.indexOf("192.168") > -1)
+	{
+		piServer = true;
+	}
+	var assets = piServer ? 'blocks/' : '../assets/';
 	
 	//color indexes
 	var COLOR_BACK= '';
@@ -52,9 +62,10 @@
 	const BUILDINGS = 3;
 	const BELOW_BASE = 4;
 	const BASE = 5;
-	const BUT_SEL_CANV = 6;
-	const ABOVE_BASE = 7;
-	const BUT_CANV = 8;
+	const BASE_OVER = 6;
+	const BUT_SEL_CANV = 7;
+	const ABOVE_BASE = 8;
+	const BUT_CANV = 9;
 
 	const CLICK_START = 0;
 	const CLICK_MOVE = 1;
@@ -87,11 +98,11 @@
 
 	var colorsImg, butImg, squareImg, playerImg, numbersImg;
 	var images =  [
-		['blocks/pics/colors.svg', "colorsImg"],
-		['blocks/pics/buttons.svg', "butImg"], 
-		['blocks/pics/squares.svg', "squareImg"],
-		['blocks/pics/player.svg', "playerImg"],
-		['blocks/pics/numbers.svg', "numbersImg"]
+		[assets + 'pics/colors.svg', "colorsImg"],
+		[assets + 'pics/buttons.svg', "butImg"], 
+		[assets + 'pics/squares.svg', "squareImg"],
+		[assets + 'pics/player.svg', "playerImg"],
+		[assets + 'pics/numbers.svg', "numbersImg"]
 	];
 	
 	var jumpSnd = 0;
@@ -109,9 +120,9 @@
 	var onSnd = 12;
 	var offSnd = 13;
 	var clankSnd = 14;
-
+	var iceHitSnd = 15;
 	
-	var soundFile = 'blocks/audio/gameSounds.mp3';
+	var soundFile = (piServer ? assets : 'https://github.com/dcdesigns/blocks-2.0/tree/master/blocks 2.0/assets/') + 'audio/gameSounds.mp3';
 	var soundOrder = [
 		[trampSnd, 1],
 		[grassSnd, .5],
@@ -127,7 +138,8 @@
 		[laserSnd, 2],
 		[onSnd, 1],
 		[offSnd, 1],
-		[clankSnd, .5]
+		[clankSnd, .5],
+		[iceHitSnd, .5]
 
 	];
 
@@ -137,27 +149,27 @@
 	
 		
 /* 	var sounds = [
-		['blocks/audio/jump.mp3', 'jumpSnd'],
-		['blocks/audio/sizzle.mp3', 'lavaSnd'],
-		['blocks/audio/bounce.mp3', 'trampSnd'],
-		['blocks/audio/grass.mp3', 'grassSnd'],
-		['blocks/audio/ice.mp3', 'iceSnd'],
-		['blocks/audio/swoop.mp3', 'swoopSnd'],
-		['blocks/audio/fall.mp3', 'fallSnd'],
+		[assets + 'audio/jump.mp3', 'jumpSnd'],
+		[assets + 'audio/sizzle.mp3', 'lavaSnd'],
+		[assets + 'audio/bounce.mp3', 'trampSnd'],
+		[assets + 'audio/grass.mp3', 'grassSnd'],
+		[assets + 'audio/ice.mp3', 'iceSnd'],
+		[assets + 'audio/swoop.mp3', 'swoopSnd'],
+		[assets + 'audio/fall.mp3', 'fallSnd'],
 	];
  */
 	
 	//define script files
 	var scripts = [
 		"https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js",
-		'blocks/code/helpers.js',
-		'blocks/code/settings.js',
-		'blocks/code/objects.js',
-		'blocks/code/squares.js',
-		'blocks/code/levels.js',
-		'blocks/code/buttons.js', 
-		'blocks/code/inputs.js',
-		'blocks/code/animator.js'
+		assets + 'code/helpers.js',
+		assets + 'code/settings.js',
+		assets + 'code/objects.js',
+		assets + 'code/squares.js',
+		assets + 'code/levels.js',
+		assets + 'code/buttons.js', 
+		assets + 'code/inputs.js',
+		assets + 'code/animator.js'
 	];
 	
 	//load all scripts and images

@@ -72,7 +72,7 @@ const alpha_ice = 1;
 //constant set to disappear in one cycle
 const opacity_rate_init = .98;
 const opacity_rate_fall = .89;
-const opacity_rate_laser = .86;
+const opacity_rate_laser = .92;
 const laser_wait_frames = 20;
 
 const targetSize = 1.2;

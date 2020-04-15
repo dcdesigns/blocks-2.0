@@ -1,8 +1,8 @@
 
-
+var t_ind = 0;
 
 var Grass = {
-	imgInd: 0,
+	imgInd: t_ind++,
 	animate: null,
 	act: function()
 	{
@@ -13,13 +13,13 @@ var Grass = {
 };
 
 var Goal = {
-	imgInd:  1,
+	imgInd:  t_ind++,
 	animate: null,
 	sound: winSnd,
 	theme: winTheme,
 	act:  function()
 	{
-		if(player.state == BURNING)
+		if(player.state == BURNING || level.activated < level.activators.length)
 		{
 			playSound(ACTION_SOUNDS, grassSnd);
 			killAll(false);
@@ -48,7 +48,7 @@ var Goal = {
 };
 
 var EmptySquare = {
-	imgInd:  2,
+	imgInd:  t_ind++,
 	animate: null,
 	act:  function()
 	{
@@ -61,7 +61,7 @@ var EmptySquare = {
 };
 
 var Lava = {
-	imgInd:  3,
+	imgInd:  t_ind++,
 	animate: null, //{time: 500, minInd: 2, maxInd: 4},
 	act:  function()
 	{
@@ -76,24 +76,109 @@ var Lava = {
 };
 
 var Ice = {
-	imgInd:  4,
+	imgInd:  t_ind++,
 	animate: null,
 	act:  function(nowSq, prevSq)
 	{
-		if(player.jumping || (nowSq != prevSq)) playSound(ACTION_SOUNDS, iceSnd);
+		
 		//console.log("ice");
 		if(!vectorNonZero(player.vel))
 		{
 			killAll(false);
+			playSound(ACTION_SOUNDS, iceHitSnd);
+		}
+		else if(player.jumping || (nowSq != prevSq))
+		{
+			playSound(ACTION_SOUNDS, iceSnd);
 		}
 		player.jumping = false;
 		slowSpin(alpha_ice);
 	}
 };
 
+var TrampBackground = t_ind++;			
+
+var TrampReg = {
+	backInd: TrampBackground,
+	imgInd: t_ind++,
+	act:  function()
+	{
+		startJump();
+	}
+};
+
+
+var TrampHorizontal = t_ind;
+t_ind += 4;
+	
+var halfPi = Math.PI / 2;
+var TrampHor = {
+	backInd: TrampBackground,
+	imgInd: TrampHorizontal,
+	act:  function()
+	{
+		player.vel[1] = -player.vel[1];
+		startJump();
+	}
+};
+
+var TrampVrt = {
+	backInd: TrampBackground,
+	imgInd: TrampHorizontal,
+	imgRotate: halfPi,
+	act:  function()
+	{
+		player.vel[0] = -player.vel[0];
+		startJump();
+	}
+};
+
+var TrampDDn = {
+	backInd: TrampBackground,
+	imgInd: TrampHorizontal,
+	imgRotate: halfPi/2,
+	act:  function()
+	{
+		player.vel = [player.vel[1], player.vel[0]];
+		startJump();
+	}
+};
+
+var TrampDUp = {
+	backInd: TrampBackground,
+	imgInd: TrampHorizontal,
+	imgRotate: -halfPi/2,
+	act:  function()
+	{
+		player.vel = [-player.vel[1], -player.vel[0]];
+		startJump();
+	}
+};
+
+var TrampClockwise = {
+	backInd: TrampBackground,
+	imgInd: t_ind++,
+	act:  function()
+	{
+		player.vel = [player.vel[1], -player.vel[0]];
+		startJump();
+	}
+};
+
+var TrampCounterClockwise = {
+	backInd: TrampBackground,
+	imgInd: t_ind++,
+	act:  function()
+	{
+		player.vel = [-player.vel[1], player.vel[0]];
+		startJump();
+	}
+};
+
+
+
 var Laser = {
-	imgInd: 5,
-	animate: null, //{time: 500, minInd: 2, maxInd: 4},
+	imgInd: t_ind,
 	airAct: function()
 	{
 		level.laserFrames = 0;
@@ -105,7 +190,7 @@ var Laser = {
 		playSound(BACK_SOUNDS, laserSnd); //todo make a laser sizzle sound
 		//playSound(BACK_SOUNDS, lavaSnd);
 	},
-	act:  function()
+	act: function()
 	{
 		level.laserMatch = roundVector(player.pos);
 		if(player.state != BURNING)
@@ -122,44 +207,231 @@ var Laser = {
 		killXY();
 	}
 };
+t_ind += 4;
+
 
 var LaserCover = {
-	imgInd: 6,
-	animate: null,
+	imgInd: t_ind,
 	act: function()
 	{
 		playSound(ACTION_SOUNDS, clankSnd);
 		killAll(false);
 	}
 };
+t_ind += 4;
 
-var OffSwitch = {
-	imgInd: 7,
-	animate: null,
+var trampRotateGroup = [TrampHor, TrampDDn, TrampVrt, TrampDUp];
+var laserGroup = [Laser, LaserCover];
+for(var i = 0; i < trampRotateGroup.length; i += 1)
+{
+	trampRotateGroup[i].group = trampRotateGroup;
+}
+for(var i = 0; i < laserGroup.length; i += 1)
+{
+	laserGroup[i].group = laserGroup;
+}
+
+function isDirTramp(square)
+{
+	var res = false;
+	if(isDefined(square.group) && square.group == trampRotateGroup)
+	{
+		res = true;
+	}
+	return res;
+}
+function isLaser(square)
+{
+	var res = false;
+	if(isDefined(square.group) && square.group == laserGroup)
+	{
+		res = true;
+	}
+	return res;
+}
+function isSwitchTarget(square)
+{
+	return isDirTramp(square) || isLaser(square);
+}
+function getGroup(square)
+{
+	//console.log(square);
+	if(isDefined(square.group))
+	{
+		//console.log(square);
+		return square.group;
+	}
+	return null;
+}
+
+function incTriggerIndex(trigger)
+{
+	var groupLen = trigger.group.length;
+	trigger.ind = ((trigger.ind + trigger.inc * trigger.direction + groupLen) % groupLen);
+}
+
+function groupIndex(group, sq)
+{
+	for(var j = 0; j < group.length; j += 1)
+	{
+		if(group[j] == sq)
+		{
+			return j;
+		}
+	}
+	return 0;
+}
+
+var Switch1 = {
+	imgInd: t_ind++,
 	act: function()
 	{
-		playSound(ACTION_SOUNDS, onSnd);
-		killAll(false);
-		var newSq = OnSwitch;
-		level.squares[player.pos[1]][player.pos[0]] = newSq;
-		drawSquare(player.pos[0], player.pos[1], newSq.imgInd);	
-		toggleLasers();
+		swtichEvent(1);
 	}
 }
 
-var OnSwitch = {
-	imgInd: 8,
+var Switch2 = {
+	imgInd: t_ind++,
+	act: function()
+	{
+		swtichEvent(2);
+	}
+}
+
+var Switch3 = {
+	imgInd: t_ind++,
+	act: function()
+	{
+		swtichEvent(3);
+	}
+}
+
+
+
+
+function swtichEvent(ind)
+{
+	playSound(ACTION_SOUNDS, onSnd);
+	killAll(false);
+	level.someChange = true;
+
+	
+	snd = false;
+	
+	//update affected
+	for(var i = 0; i < level.triggers.length; i += 1)
+	{	
+		var trigger = level.triggers[i];
+		if(isDefined(trigger.onOff) && trigger.onOff == ind)
+		{	
+			incTriggerIndex(trigger);
+			var sq = trigger.group[trigger.ind];
+			if(isDefined(trigger.sound))
+			{
+				snd = true;
+			}	
+			level.squares[trigger.y][trigger.x] = sq;			
+			drawSquare(trigger.x, trigger.y, sq, sq.imgInd + ind);				
+		}
+	}
+
+	if(snd)
+	{
+		playSound(BACK_SOUNDS, gearSnd);
+	}
+}
+
+var UnLocked = {
+	imgInd: t_ind++,
+	imgRotate: "screen",
+	act: function()
+	{
+		toggleLocks(false);
+	}
+}
+
+var Locked = {
+	imgInd: t_ind++,
+	imgRotate: "screen",
+	act: function()
+	{
+		toggleLocks(true);
+	}
+}
+
+var LockBorder = {
+	imgInd: t_ind++
+};
+
+function toggleLocks(wasLocked)
+{
+	var newSq, snd;
+	if(wasLocked)
+	{
+		newSq = UnLocked;
+		snd = offSnd;
+	}
+	else
+	{
+		newSq = Locked;
+		snd = onSnd;
+	}
+	playSound(ACTION_SOUNDS, snd);
+	killAll(false);
+	level.someChange = true;
+	setLocks(!level.locked);
+
+}
+
+
+var UnActivated = {
+	imgInd: t_ind++,
+	imgRotate: "screen",
+	act: function()
+	{
+		toggleActivated(false);
+	}
+}
+
+var Activated = {
+	imgInd: t_ind++,
+	imgRotate: "screen",
 	animate: null,
 	act: function()
 	{
-		playSound(ACTION_SOUNDS, offSnd);
-		killAll(false);
-		var newSq = OffSwitch;
-		level.squares[player.pos[1]][player.pos[0]] = newSq;
-		drawSquare(player.pos[0], player.pos[1], newSq.imgInd);	
-		toggleLasers();
+		toggleActivated(true);
 	}
 }
+
+
+function toggleActivated(wasActive)
+{
+	var newSq, snd;
+	if(wasActive)
+	{
+		newSq = UnActivated;
+		snd = offSnd;
+		level.activated--;
+	}
+	else
+	{
+		newSq = Activated;
+		snd = onSnd;
+		level.activated++;
+	}
+	playSound(ACTION_SOUNDS, snd);
+	killAll(false);
+	level.someChange = true;
+	level.squares[player.pos[1]][player.pos[0]] = newSq;
+	drawSquare(player.pos[0], player.pos[1], newSq);
+	
+	console.log("active", level.activated, "/", level.activators.length);
+	//do something useful
+
+}
+
+
+
 
 function portalAction()
 {
@@ -180,208 +452,114 @@ function portalAction()
 	
 
 var Portal = {
-	imgInd: 9,
-	animate: {time: 100, minInd: 9, maxInd: 11},
+	imgInd: t_ind,
+	animate: {time: 100, minInd: t_ind, maxInd: t_ind + 2},
 	act: function()
 	{
 		portalAction();
 	}
 };
+t_ind += 3;
 
 var PortalB = {
-	imgInd: 12,
-	animate: {time: 100, minInd: 12, maxInd: 14},
+	imgInd: t_ind,
+	animate: {time: Portal.animate.time, minInd: t_ind, maxInd: t_ind + 2},
 	act: function()
 	{
 		portalAction();
 	}
 };
+t_ind += 3;
 
 
-
-
-
-function toggleLasers()
-{
-	var snd = false;
-	for(var y = 0; y < level.squares.length; y += 1)
-	{
-		for(var x = 0; x < level.squares[0].length; x += 1)
-		{
-			var newSq = null;
-			if(level.squares[y][x] == Laser)
-			{
-				newSq = LaserCover;
-			}
-			else if(level.squares[y][x] == LaserCover)
-			{
-				newSq = Laser;
-			}
-			if(newSq != null) 
-			{
-				level.squares[y][x] = newSq;
-				drawSquare(x, y, newSq.imgInd);
-				snd = true;
-			}
-		}
-	}
-	if(snd)
-	{
-		playSound(BACK_SOUNDS, gearSnd);
-	}
-}
-			
-
-var TrampReg = {
-	imgInd:  15,
-	animate: null,
-	act:  function()
-	{
-		startJump();
-	}
-};
-
-var TrampHor = {
-	imgInd:  16,
-	animate: null,
-	act:  function()
-	{
-		player.vel[1] = -player.vel[1];
-		startJump();
-	}
-};
-
-var TrampVrt = {
-	imgInd:  17,
-	animate: null,
-	act:  function()
-	{
-		player.vel[0] = -player.vel[0];
-		startJump();
-	}
-};
-
-var TrampDDn = {
-	imgInd:  18,
-	animate: null,
-	act:  function()
-	{
-		player.vel = [player.vel[1], player.vel[0]];
-		startJump();
-	}
-};
-
-var TrampDUp = {
-	imgInd:  19,
-	animate: null,
-	act:  function()
-	{
-		player.vel = [-player.vel[1], -player.vel[0]];
-		startJump();
-	}
-};
-
-var TrampClockwise = {
-	imgInd:  20,
-	animate: null,
-	act:  function()
-	{
-		player.vel = [player.vel[1], -player.vel[0]];
-		startJump();
-	}
-};
-
-var TrampCounterClockwise = {
-	imgInd:  21,
-	animate: null,
-	act:  function()
-	{
-		player.vel = [-player.vel[1], player.vel[0]];
-		startJump();
-	}
-};
-
-var trampRotateGroup = [TrampHor, TrampDDn, TrampVrt, TrampDUp];
-function isDirTramp(square)
-{
-	return trampRotateGroup.includes(square);
-}
 
 //square modifiers
 
 //specifically for directional tramps
 var RotateClockwise = {
-	imgInd: 22,
+	imgInd: t_ind++,
 	direction: 1
 };
 var RotateCounterClockwise = {
-	imgInd: 23,
+	imgInd: t_ind++,
 	direction: -1
 };
 
 var RotateSingle = {
-	imgInd: 24,
+	imgInd: t_ind++,
 	inc: 1
 };
 
 var RotateDouble = {
-	imgInd: 25,
+	imgInd: t_ind++,
 	inc: 2
 };
 
 var NoModifier = {
-	imgInd: 26,
+	imgInd: t_ind++,
 	ignore: true
 };
 
 var JumpTrigger = {
-	imgInd: 27,
+	imgInd: t_ind++,
 	trigger: true,
 	any: false,
 	sound: gearSnd,
 };
 
 var AnyJumpTrigger = {
-	imgInd: 28,
+	imgInd: t_ind++,
 	trigger: true,
 	any: true,
 	sound: gearSnd,
 };
 
 var TimerTrigger = {
-	imgInd: 29,
+	imgInd: t_ind++,
 	limit: 1500,
 	sound: gearSnd,
 };
 
 
-var SwitchTrigger = {
-	imgInd: 30,
+var SwitchTrigger1 = {
+	imgInd: t_ind++,
 	trigger: false,
 	any: false,
-	onOff: true,
+	onOff: 1,
+	sound: gearSnd
+};
+
+var SwitchTrigger2 = {
+	imgInd: t_ind++,
+	trigger: false,
+	any: false,
+	onOff: 2,
+	sound: gearSnd
+};
+
+var SwitchTrigger3 = {
+	imgInd: t_ind++,
+	trigger: false,
+	any: false,
+	onOff: 3,
 	sound: gearSnd
 };
 
 //specifically for portals
 var PortalZero = {
-	imgInd: 31,
+	imgInd: t_ind++,
 	portalGroup: 0,
 };
 
 var PortalOne = {
-	imgInd: 32,
+	imgInd: t_ind++,
 	portalGroup: 0,
 };
 
 var PortalTwo = {
-	imgInd: 33,
+	imgInd: t_ind++,
 	portalGroup: 0,
 };
-
-
-
-
 
 
 var sqCodes = {
@@ -399,17 +577,24 @@ var sqCodes = {
 	"/": TrampDUp,
 	"W": TrampClockwise,
 	"C": TrampCounterClockwise,
+	"1": Switch1,
+	"2": Switch2,
+	"3": Switch3,
 	"Z": Laser,
 	"K": LaserCover,
-	"F": OffSwitch,
-	"O": OnSwitch,
+	"$": Locked,
+	"S": UnLocked,
+	"U": UnActivated,
+	"V": Activated,
 	
 };
 
 var modObjects = [
 	NoModifier,
 	TimerTrigger,
-	SwitchTrigger,
+	SwitchTrigger1,
+	SwitchTrigger2,
+	SwitchTrigger3,
 	JumpTrigger,
 	AnyJumpTrigger,
 	RotateClockwise,

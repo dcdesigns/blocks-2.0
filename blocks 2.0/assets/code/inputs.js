@@ -314,9 +314,39 @@ function endClick(e)
 	else if(click.act === SELECT_MOVE && click.delta[0] !== null && player.state == IDLE && !outOfMoves()) //&& not dead and moves left and blah blah
 	{
 		audioCx.resume();
-		player.history.push(vectorCopy(player.pos));
+		var trigs = []; 
+		var activs = [];
+		var activCnt = 0;
+		/* var toggles = [];
+		for(var x = 0; x < level.size[0]; x += 1)
+		{
+			for(var y = 0; y < level.size[1]; y += 1)
+			{
+				if(isLaserOrCover(level.squares[y][x]))
+				{
+					toggles.push({x: x, y: y, type: level.squares[y][x]});
+				}
+			}
+		} */
+		for(var i = 0; i < level.triggers.length; i += 1)
+		{	
+			var trigger = level.triggers[i];
+			var onOff = isDefined(trigger.onOff) ? trigger.onOff : 0;
+			trigs.push({x: trigger.x, y: trigger.y, ind: trigger.ind, onOff: onOff});
+		}
+		for(var i = 0; i < level.activators.length; i += 1)
+		{	
+			var activ = level.activators[i];
+			var ind = (level.squares[activ.y][activ.x] == Activated) ? 1: 0;
+			
+			activs.push({x: activ.x, y: activ.y, ind: ind});
+			//console.log(activs[activs.length - 1]);
+			activCnt += ind;
+		}
+		player.history.push({pos: vectorCopy(player.pos), triggers: trigs, activators: activs, activeCnt: activCnt});
 		player.lastMatchPos = vectorCopy(player.pos);
 		player.target = click.delta;
+		level.someChange = false;
 		startJump(0);
 	}
 	killClick(false);

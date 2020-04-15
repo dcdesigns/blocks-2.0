@@ -96,7 +96,7 @@ var menu = {
 
 var popup = {
 	act: null,
-	but: 60,
+	but: 40,
 	gap: 5,
 	left: 0, 
 	top: 0,
@@ -530,10 +530,33 @@ function startClick(e)
 			clearCanv(FRONT);
 			setPopup(e);
 			
+			var CX = cx[FRONT];
+			var off = popup.gap / 2;
+			
+			
 			for(var i = 0; i < squares.length; i += 1)
 			{
-				cx[FRONT].drawImage(squareImg, (squares[i].imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
-				popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + popup.gap, popup.but, popup.but);
+				CX.save();
+				CX.translate(popup.left + off + (i + .5) * (popup.but + popup.gap), popup.top + popup.gap +  (.5) * (popup.but));
+				var sq = squares[i];
+				console.log(i, sq.imgInd);
+				if(isDefined(sq.backInd))
+				{
+					CX.drawImage(squareImg, (sq.backInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+						- .5 * popup.but, - .5 * popup.but, popup.but, popup.but);
+				}
+				if(isDefined(sq.imgRotate) && sq.imgRotate != 'screen')
+				{
+					CX.rotate(sq.imgRotate);
+				}
+				CX.translate((-.5) * popup.but, (-.5) * popup.but);
+				CX.drawImage(squareImg, (sq.imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+				0, 0, popup.but, popup.but);
+				CX.restore();
+				
+				
+				// cx[FRONT].drawImage(squareImg, (squares[i].imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+				// popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + popup.gap, popup.but, popup.but);
 			}
 			cx[FRONT].drawImage(playerImg, 0, 0, playerImg.height, playerImg.height,
 				popup.left + popup.gap +  i * (popup.but + popup.gap), popup.top + popup.gap, popup.but, popup.but);
@@ -895,10 +918,42 @@ function keyRelease(event)
 	}
 }
 	
-function drawSquare(ind_x, ind_y, imgInd, img = squareImg)
+function drawSquare(ind_x, ind_y, sq, img = squareImg)
 {
-	cx[MID].drawImage(img, (imgInd) * img.height + scrn.imgBuffer, scrn.imgBuffer, img.height - 2* scrn.imgBuffer, img.height - 2*scrn.imgBuffer,
-		scrn.sx + scrn.sqOff + ind_x * (scrn.sq), scrn.sy + scrn.sqOff + ind_y * (scrn.sq), scrn.sqReduc, scrn.sqReduc);
+	var CX = cx[MID];
+	
+	CX.save();
+	CX.translate(scrn.sx +  (ind_x + .5) * (scrn.sq), scrn.sy + (ind_y + .5) * (scrn.sq));
+	var imgInd;
+	if(sq != null)
+	{
+		imgInd = sq.imgInd;
+		if(isDefined(sq.backInd))
+		{
+			CX.drawImage(squareImg, (sq.backInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+				- .5 * scrn.sq + scrn.sqOff, - .5 * scrn.sq + scrn.sqOff, scrn.sqReduc, scrn.sqReduc);
+		}
+		if(isDefined(sq.imgRotate) && sq.imgRotate != 'screen')
+		{
+			CX.rotate(sq.imgRotate);
+		}
+	}
+	else
+	{
+		imgInd = 0;
+	}
+	CX.translate((-.5) * scrn.sq, (-.5) * scrn.sq);
+	
+	CX.drawImage(img, (imgInd) * img.height + scrn.imgBuffer, scrn.imgBuffer, img.height - 2* scrn.imgBuffer, img.height - 2*scrn.imgBuffer,
+		scrn.sqOff, scrn.sqOff, scrn.sqReduc, scrn.sqReduc);
+	
+	CX.restore();
+	
+	
+	
+	
+	// cx[MID].drawImage(img, (imgInd) * img.height + scrn.imgBuffer, scrn.imgBuffer, img.height - 2* scrn.imgBuffer, img.height - 2*scrn.imgBuffer,
+		// scrn.sx + scrn.sqOff + ind_x * (scrn.sq), scrn.sy + scrn.sqOff + ind_y * (scrn.sq), scrn.sqReduc, scrn.sqReduc);
 }
 	
 function gridChange()
@@ -951,37 +1006,43 @@ function gridChange()
 			for(var y = 0; y < numY; y += 1)
 			{
 				var square = squares[grid[x][y]]
-				var imgInd = square.imgInd;
-				drawSquare(x, y, imgInd);
+				drawSquare(x, y, square);
 			}
 		}
 		console.log(player);
-		drawSquare(player[0], player[1], 0, playerImg);
+		drawSquare(player[0], player[1], null, playerImg);
 		for(var x = 0; x < numX; x += 1)
 		{
 			for(var y = 0; y < numY; y += 1)
 			{
-				var square = squares[grid[x][y]]
+				var square = squares[grid[x][y]];
 				var imgInd = square.imgInd;
 				var mod = modifiers[x][y];
-
+				if(isLaser(square))
+				{
+					console.log("laser", square, "mod", mod);
+				}
 				if(square == Portal || square == PortalB)
 				{
-					drawSquare(x, y, mod.portalGroup.imgInd);
+					drawSquare(x, y, mod.portalGroup);
 				}
-				else if(isDirTramp(square) && (mod.trigger != NoModifier || mod.timer != NoModifier))
+				else if(isSwitchTarget(square) && (mod.trigger != NoModifier || mod.timer != NoModifier))
 				{
+					console.log(x, y, square);
 					//if(mod.trigger != NoModifier) console.log("trig a", mod.trigger);
 					//if(mod.timer != NoModifier) console.log("time a", mod.timer);
-					drawSquare(x, y, mod.direction.imgInd);
-					drawSquare(x, y, mod.inc.imgInd);
+					if(isDirTramp(square))
+					{
+						drawSquare(x, y, mod.direction);
+						drawSquare(x, y, mod.inc);
+					}
 					if(mod.trigger != NoModifier)
 					{
-						drawSquare(x, y, mod.trigger.imgInd);
+						drawSquare(x, y, mod.trigger);
 					}
 					else
 					{
-						drawSquare(x, y, mod.timer.imgInd);
+						drawSquare(x, y, mod.timer);
 					}
 				}
 			}
@@ -1102,13 +1163,37 @@ function drawMenu(indStart = 0, indEnd = GAME_LEVELS.length)
 	}
 }
 		
-function drawScaledSquare(CX,imgInd, x, y, l, t, sqReduc, sqSize, sqOff)
+function drawScaledSquare(CX,sq, x, y, l, t, sqReduc, sqSize, sqOff)
 {
-	if(imgInd != EmptySquare.imgInd)
+	if(sq == EmptySquare) return;
+	
+	
+
+	if(isDefined(sq.backInd))
 	{
-		CX.drawImage(squareImg, (imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+		CX.drawImage(squareImg, (sq.backInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
 			l + sqOff + x * sqSize, t + sqOff + y * sqSize, sqReduc, sqReduc);
+		// CX.drawImage(squareImg, (sq.backInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+			// - .5 * sqSize + sqOff, - .5 * sqSize + sqOff, sqReduc, sqReduc);
 	}
+	if(isDefined(sq.imgRotate) && sq.imgRotate != 'screen')
+	{
+		CX.save();
+		CX.translate(l +  (x + .5) * (sqSize), t + (y + .5) * (sqSize));
+		CX.rotate(sq.imgRotate);
+		CX.translate((-.5) * sqSize, (-.5) * sqSize);
+	
+		CX.drawImage(squareImg, (sq.imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+			sqOff, sqOff, sqReduc, sqReduc);
+		
+		CX.restore();
+	}
+
+	else
+	{
+		CX.drawImage(squareImg, (sq.imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+			l + sqOff + x * sqSize, t + sqOff + y * sqSize, sqReduc, sqReduc);
+	} 
 }
 
 function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
@@ -1138,8 +1223,7 @@ function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
 		for(var y = 0; y < numY; y += 1)
 		{
 			var square = sqCodes[level.map[y][x]];
-			var imgInd = square.imgInd;
-			drawScaledSquare(CX, imgInd, x, y, l, t, sqReduc, sqSize, sqOff)
+			drawScaledSquare(CX, square, x, y, l, t, sqReduc, sqSize, sqOff)
 			
 		}
 	}
@@ -1153,22 +1237,24 @@ function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
 			var square = sqCodes[level.map[y][x]];
 			if(square == Portal || square == PortalB)
 			{
-				drawScaledSquare(CX,mod.portalGroup.imgInd, x, y, l, t, sqReduc, sqSize, sqOff);
+				drawScaledSquare(CX,mod.portalGroup, x, y, l, t, sqReduc, sqSize, sqOff);
 			}
-			else if(isDirTramp(square) && (isDefined(mod.trigger) || isDefined(mod.timer)))
+			else if(isSwitchTarget(square) && (isDefined(mod.trigger) || isDefined(mod.timer)))
 			{
 				//if(mod.trigger != NoModifier) console.log("trig a", mod.trigger);
 				//if(mod.timer != NoModifier) console.log("time a", mod.timer);
-				drawScaledSquare(CX,  mod.direction.imgInd, x, y, l, t, sqReduc, sqSize, sqOff);
-				drawScaledSquare(CX,  mod.inc.imgInd, x, y, l, t, sqReduc, sqSize, sqOff);
-	
+				if(isDirTramp(square))
+				{
+					drawScaledSquare(CX,  mod.direction, x, y, l, t, sqReduc, sqSize, sqOff);
+					drawScaledSquare(CX,  mod.inc, x, y, l, t, sqReduc, sqSize, sqOff);
+				}
 				if(isDefined(mod.trigger))
 				{
-					drawScaledSquare(CX, mod.trigger.imgInd, x, y, l, t, sqReduc, sqSize, sqOff);
+					drawScaledSquare(CX, mod.trigger, x, y, l, t, sqReduc, sqSize, sqOff);
 				}
 				else
 				{
-					drawScaledSquare(CX, mod.timer.imgInd, x, y, l, t, sqReduc, sqSize, sqOff);
+					drawScaledSquare(CX, mod.timer, x, y, l, t, sqReduc, sqSize, sqOff);
 				}
 			}
 		}
@@ -1226,8 +1312,12 @@ function levels_to_text()
 					}
 					out_str += '\t\t\t{x: ' + mod.x + ', y:' + mod.y + ', type: ' + getNameOfObj(square) + ', portalGroup: ' + getNameOfObj(mod.portalGroup) + '},\n';
 				}
-				else if(isDirTramp(square) && isDefined(mod.trigger))
+				else if(isSwitchTarget(square) && isDefined(mod.trigger))
 				{
+					if(!isDirTramp(square))
+					{
+						mod.inc = RotateSingle;
+					}
 					if(!any_special)
 					{
 						out_str += '\t\tspecialCodes: [\n';
@@ -1235,8 +1325,12 @@ function levels_to_text()
 					}
 					out_str += '\t\t\t{x: ' + mod.x + ', y:' + mod.y + ', trigger: ' + getNameOfObj(mod.trigger) + ', direction: ' + getNameOfObj(mod.direction) + ', inc: ' +  getNameOfObj(mod.inc) + '},\n';
 				}
-				else if(isDirTramp(square) && isDefined(mod.timer))
+				else if(isSwitchTarget(square) && isDefined(mod.timer))
 				{
+					if(!isDirTramp(square))
+					{
+						mod.inc = RotateSingle;
+					}
 					if(!any_special)
 					{
 						out_str += '\t\tspecialCodes: [\n';
@@ -1256,7 +1350,7 @@ function levels_to_text()
 		out_str += "\t},\n\n";
 	}
 	out_str += "];\n";
-	console.log(out_str);
+	//console.log(out_str);
 	
 	return (out_str);
 }
@@ -1282,11 +1376,11 @@ function add_level(type)
 				{
 					new_level.specialCodes.push({x: x, y: y, type: square, portalGroup: mod.portalGroup});
 				}
-				else if(isDirTramp(square) && mod.timer != NoModifier)
+				else if(isSwitchTarget(square) && mod.timer != NoModifier)
 				{
 					new_level.specialCodes.push({x: x, y: y, timer: mod.timer, direction: mod.direction, inc: mod.inc});
 				}
-				else if(isDirTramp(square) && mod.trigger != NoModifier)
+				else if(isSwitchTarget(square) && mod.trigger != NoModifier)
 				{
 					new_level.specialCodes.push({x: x, y: y, trigger: mod.trigger, direction: mod.direction, inc: mod.inc});
 				}

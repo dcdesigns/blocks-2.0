@@ -91,10 +91,17 @@ function nextLevel()
 	level.animators = [];
 	level.timers = [];
 	level.triggers = [];
+	level.activators = [];
 	level.portals = [];
-	level.toggles = [];
+	//level.toggles = [];
 	level.laserMatch = null;
 	level.laserFrames = 0;
+	level.someChange = false;
+	level.locked = false;
+	level.locks = [];
+	level.initLocked = false;
+	level.activated = 0;
+	level.goal = {x: 0, y: 0};
 	
 	
 	if(isDefined(curLevel.specialCodes))
@@ -117,22 +124,18 @@ function nextLevel()
 			else
 			{
 				var copied = {};
-				var square = sqCodes[curLevel.map[special.y][special.x]];
-				var ind;
-				for(var j = 0; j < trampRotateGroup.length; j += 1)
-				{
-					if(trampRotateGroup[j] == square)
-					{
-						ind = j;
-						break;
-					}
-				}
+				var sq = sqCodes[curLevel.map[special.y][special.x]]
+				var group = getGroup(sq);
+				if(group == null) continue;
+				
+				var ind = groupIndex(group, sq);
 				copied.x = special.x;
 				copied.y = special.y;
 				copied.ind = ind;
 				copied.init = ind;
 				copied.direction = special.direction.direction;
 				copied.inc = special.inc.inc;
+				copied.group = group;
 				
 				
 				//trigger tramp
@@ -150,7 +153,7 @@ function nextLevel()
 					}
 					
 					level.triggers.push(copied);
-					console.log("trig", copied);
+					//console.log("trig", copied);
 				}
 				else if(isDefined(special.timer))
 				{
@@ -202,6 +205,21 @@ function nextLevel()
 		for(var x = 0; x < level.size[0]; x += 1)
 		{
 			var square = sqCodes[curLevel.map[y][x]];
+			if(square == Locked)
+			{
+				level.locked = true;
+				level.initLocked = true;
+			}
+			else if(square == Activated || square == UnActivated)
+			{
+				var ind = (square == Activated) ? 1: 0;
+				level.activators.push({x: x, y: y, ind: ind, init: ind});
+				level.activated += ind;
+			}
+			else if(square == Goal)
+			{
+				level.goal = {x: x, y: y};
+			}
 			/* if(square == Laser)
 			{
 				level.lasers.push({pos: [x,y], on: false});
@@ -212,13 +230,11 @@ function nextLevel()
 			{
 				level.animators.push({ind_x: x, ind_y: y, time: 0, ind: square.animate.minInd, animate: square.animate});
 			}
-			var laser = null;
-			if(square == Laser) laser = Laser;
-			else if(square == LaserCover) laser = LaserCover;
-			if([Laser, LaserCover, OnSwitch, OffSwitch].includes(square))
+
+			/* if(isLaserOrCover(square))
 			{
 				level.toggles.push({pos: [x,y], type: square});
-			}
+			} */
 			row.push(square);
 		}
 		level.squares.push(row);
@@ -242,11 +258,11 @@ var player = {
 	state: IDLE,
 	
 	//xy motion
-	pos: [2,3],
+	pos: [0,0],
 	vel: [0,0],
 	target: [0,0], //probably not necessary once changes are in place
 	targetPhase: 0,
-	lastMatchPos: [2,3],
+	lastMatchPos: [0,0],
 	history: [],
 	rewindPos: [0,0],
 	
@@ -318,23 +334,22 @@ function setSquareAction(rounded)
 			//sq.sound.play();
 		} */
 		var backSnd = null;
-		var isSwitch = (sq == OffSwitch || sq == OnSwitch);
-		console.log('switch', isSwitch);
 		if(player.jumping)
 		{
 			for(var i = 0; i < level.triggers.length; i += 1)
 			{	
 				var trigger = level.triggers[i];
-				console.log("trig", trigger);
-				if((isSwitch && isDefined(trigger.onOff)) || trigger.any || (trigger.trigger && trigger.x == player.pos[0] && trigger.y == player.pos[1]))
+				//console.log("trig", trigger);
+				if(trigger.any || (trigger.trigger && trigger.x == player.pos[0] && trigger.y == player.pos[1]))
 				{	
-					trigger.ind = (trigger.ind + trigger.inc * trigger.direction + 4) % 4;
+					incTriggerIndex(trigger);
 					if(isDefined(trigger.sound))
 					{
 						backSnd = trigger.sound;
 					}	
-					level.squares[trigger.y][trigger.x] = trampRotateGroup[trigger.ind];				
-					drawSquare(trigger.x, trigger.y, trampRotateGroup[trigger.ind].imgInd);	
+					level.squares[trigger.y][trigger.x] = trigger.group[trigger.ind];				
+					drawSquare(trigger.x, trigger.y, trigger.group[trigger.ind]);
+					level.someChange = true;					
 				}
 			}
 		}
@@ -382,6 +397,13 @@ function updatePlayer(elapsed)
 		player.pos[1] += elapsed * player.vel[1];
 		
 		var on_board = onBoard();
+		if(on_board && player.state == IDLE && level.squares[player.pos[1]][player.pos[0]] == Laser)
+		{
+			console.log(player.pos, player.lastMatchPos);
+			setSquareAction(roundVector(player.pos));
+			
+			return;
+		}
 		/* if(!on_board && player.state !== FALLING)
 		{
 			player.state = FALLING;

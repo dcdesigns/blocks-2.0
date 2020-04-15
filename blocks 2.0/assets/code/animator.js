@@ -273,13 +273,28 @@ function reConfigure()
 	}
 }
 
-function drawScaledSquare(CX,imgInd, x, y, l, t, sqReduc, sqSize, sqOff)
+function drawScaledSquare(CX,sq, x, y, l, t, sqReduc, sqSize, sqOff, imgInd)
 {
-	if(imgInd != EmptySquare.imgInd)
+	if(sq == EmptySquare) return;
+	
+	CX.save();
+	CX.translate(l +  (x + .5) * (sqSize), t + (y + .5) * (sqSize));
+
+	if(isDefined(sq.backInd))
 	{
-		CX.drawImage(squareImg, (imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
-			l + sqOff + x * sqSize, t + sqOff + y * sqSize, sqReduc, sqReduc);
+		CX.drawImage(squareImg, (sq.backInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+			- .5 * sqSize + sqOff, - .5 * sqSize + sqOff, sqReduc, sqReduc);
 	}
+	if(isDefined(sq.imgRotate) && sq.imgRotate != 'screen')
+	{
+		CX.rotate(sq.imgRotate);
+	}
+	CX.translate((-.5) * sqSize, (-.5) * sqSize);
+	
+	CX.drawImage(squareImg, (imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+		sqOff, sqOff, sqReduc, sqReduc);
+	
+	CX.restore();
 }
 
 function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
@@ -308,12 +323,32 @@ function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
 	{
 		for(var y = 0; y < numY; y += 1)
 		{
-			var square = sqCodes[level.map[y][x]];
-			var imgInd = square.imgInd;
-			drawScaledSquare(CX, imgInd, x, y, l, t, sqReduc, sqSize, sqOff)
+			var sq = sqCodes[level.map[y][x]];
+			var imgInd = sq.imgInd;
+			if(isDefined(level.specialCodes))
+			{
+				for(var i = 0; i < level.specialCodes.length; i += 1)
+				{
+					var code = level.specialCodes[i];
+					if(code.x == x && code.y == y)
+					{
+						if(isDefined(code.trigger))
+						{
+							if(isDefined(code.trigger.onOff))
+							{
+								imgInd += code.trigger.onOff
+							}
+						}
+						break;
+					}
+				}
+			}
+			drawScaledSquare(CX, sq, x, y, l, t, sqReduc, sqSize, sqOff, imgInd)
 			
 		}
 	}
+	
+	
 
 	CX.fillStyle = 'blue';
 	CX.fillRect(l + (level.player[0] + .3) * sqSize, t + (level.player[1] + .3) * sqSize, sqSize * .4, sqSize * .4);
@@ -566,6 +601,7 @@ function drawBase()
 	cx[BACK].clearRect(0,0, scrn.w,scrn.h);
 	cx[BUT_CANV].clearRect(0, 0, canv[BASE].width, canv[BASE].height);
 	cx[BASE].clearRect(scrn.adjL, scrn.adjT, scrn.adjW, scrn.adjH);
+	cx[BASE_OVER].clearRect(scrn.adjL - scrn.but, scrn.adjT - scrn.but, scrn.adjW + 2 * scrn.but, scrn.adjH + 2 * scrn.but);
 	//cx[BELOW_BASE].clearRect(scrn.adjL, scrn.adjT, scrn.adjW, scrn.adjH);
 	//horizontal buttons
 	cx[BACK].fillStyle = COLOR_BUTTON_BACK;
@@ -626,7 +662,7 @@ function drawBase()
 		{
 			for(var j = 0; j < level.size[1]; j += 1)
 			{
-				drawSquare(i, j, level.squares[j][i].imgInd);
+				drawSquare(i, j, level.squares[j][i]);
 			}
 		}
 		/* for(var i = 0; i < level.size[0]; i += 1)
@@ -636,6 +672,21 @@ function drawBase()
 				draw3DSquare([i,j], 0,3000, 0, scrn.radius / 50, scrn.r2, scrn.r1, cx[BASE], COLOR_BUILDING_TOP, COLOR_BUILDING_SIDEA, COLOR_BUILDING_SIDEB, 1, true, true, 1,1);
 			}
 		} */
+		
+		//rotate tramps
+		for(var i = 0; i < level.triggers.length; i += 1)
+		{	
+			var trigger = level.triggers[i];
+			
+			if(isDefined(trigger.onOff))
+			{	
+				//console.log(trigger);
+				var sq = trigger.group[trigger.ind];
+				level.squares[trigger.y][trigger.x] = sq;			
+				drawSquare(trigger.x, trigger.y, sq, sq.imgInd + trigger.onOff);				
+			}
+		}
+		setLocks(level.locked);
 	}
 	else
 	{
@@ -687,6 +738,8 @@ function drawBase()
 				
 		}
 		
+		
+		
 	}
 	
 	//connectIce();
@@ -694,11 +747,44 @@ function drawBase()
 }
 
 
-function drawSquare(ind_x, ind_y, imgInd)
+function drawSquare(ind_x, ind_y, square, imgInd = 0, nowCX = cx[BASE])
 {
+	nowCX.save();
+	nowCX.translate((ind_x + .5) * (scrn.sq), (ind_y + .5) * (scrn.sq));
+	if(square != null)
+	{
+		if(imgInd == 0) imgInd = square.imgInd;
+		if(isDefined(square.backInd))
+		{
+			nowCX.drawImage(squareImg, (square.backInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+				scrn.sqOff + scrn.sqBuffer - .5 * scrn.sq, scrn.sqOff + scrn.sqBuffer - .5 * scrn.sq, scrn.sqReduc - 2 * scrn.sqBuffer, scrn.sqReduc - 2 * scrn.sqBuffer);
+		}
+		if(isDefined(square.imgRotate))
+		{
+			if(square.imgRotate == 'screen') nowCX.rotate(flipped * Math.PI/2);
+			else
+			{
+				nowCX.rotate(square.imgRotate);
+			}
+		}
+	}
+	nowCX.translate((-.5) * (scrn.sq), (-.5) * (scrn.sq));
+	
+	nowCX.drawImage(squareImg, (imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+		scrn.sqOff + scrn.sqBuffer, scrn.sqOff + scrn.sqBuffer, scrn.sqReduc - 2 * scrn.sqBuffer, scrn.sqReduc - 2 * scrn.sqBuffer);
+	
+	nowCX.restore();
+	/* if(square == OffSwitch1)
+	{
+		draw3DSquare([ind_x, ind_y], 0, playerThickness * .7, 0, player.radius*.6, player.r2, player.r1,nowCX, 'yellow', 'red', 'orange', 1, false, false, playerNegRScale);
+	}
+	else if(square == OnSwitch1)
+	{
+		draw3DSquare([ind_x, ind_y], 0, playerThickness * .1, 0, player.radius*.6, player.r2, player.r1,nowCX, 'yellow', 'red', 'orange', 1, false, false, playerNegRScale);
+	} */
 	//cx[BASE].clearRect(ind_x * (scrn.sq), ind_y * (scrn.sq), scrn.sq, scrn.sq);
-	cx[BASE].drawImage(squareImg, (imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
-		scrn.sqOff + scrn.sqBuffer + ind_x * (scrn.sq), scrn.sqOff + scrn.sqBuffer + ind_y * (scrn.sq), scrn.sqReduc - 2 * scrn.sqBuffer, scrn.sqReduc - 2 * scrn.sqBuffer);
+	// cx[BASE].drawImage(squareImg, (imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+		// scrn.sqOff + scrn.sqBuffer + ind_x * (scrn.sq), scrn.sqOff + scrn.sqBuffer + ind_y * (scrn.sq), scrn.sqReduc - 2 * scrn.sqBuffer, scrn.sqReduc - 2 * scrn.sqBuffer);
 }
 
 
@@ -1011,6 +1097,29 @@ function drawPlayer(elapsed)
 var last_w = 0; 
 var last_h = 0;
 
+function updateGoalPct()
+{
+	var total = level.activators.length;
+	if(total < 1) return;
+	var nowCX = cx[ABOVE_BASE];
+	var rad = scrn.sq * .3;
+	var angle = (total - level.activated)/total * Math.PI * 2;
+	nowCX.save();
+	nowCX.translate((level.goal.x + .5) * (scrn.sq), (level.goal.y + .5) * (scrn.sq));
+	nowCX.clearRect(-scrn.sq/2, -scrn.sq/2, scrn.sq, scrn.sq);
+	if(angle != 0)
+	{
+		nowCX.rotate(flipped * Math.PI/2);
+		nowCX.globalAlpha = .5;
+		nowCX.fillStyle = 'black';
+		nowCX.beginPath();
+		nowCX.moveTo(0,0);
+		nowCX.arc(0,0,rad, -Math.PI/2, -Math.PI/2 - angle, true);
+		nowCX.fill();
+	}
+	nowCX.restore();
+}
+
 function animate()
 {
 	
@@ -1079,11 +1188,11 @@ function animate()
 				
 				{	
 					if(anim.ind > anim.animate.maxInd) anim.ind = anim.animate.minInd;
-					drawSquare(anim.ind_x, anim.ind_y, anim.ind);
+					drawSquare(anim.ind_x, anim.ind_y, null, anim.ind);
 				}
 			}
-			
 		}
+		updateGoalPct();
 		
 		var backSnd = null;
 		for(var i = 0; i < level.timers.length; i += 1)
@@ -1093,14 +1202,15 @@ function animate()
 			if(timer.time >= timer.limit)
 			{
 				timer.time = 0;
-				timer.ind = (timer.ind + timer.inc * timer.direction + 4) % 4;
+				incTriggerIndex(timer);
+
 				if(isDefined(timer.sound))
 				{
 					backSnd = timer.sound;
 				}
 				//console.log(timer.ind);
-				level.squares[timer.y][timer.x] = trampRotateGroup[timer.ind];
-				drawSquare(timer.x, timer.y, trampRotateGroup[timer.ind].imgInd);
+				level.squares[timer.y][timer.x] = timer.group[timer.ind];
+				drawSquare(timer.x, timer.y, timer.group[timer.ind]);
 			}
 		}
 		if(backSnd !== null) playSound(BACK_SOUNDS, backSnd);
@@ -1128,7 +1238,7 @@ function animate()
 			drawButtonHighlight(cx[BUT_SEL_CANV], RESTART_IND, COLOR_BUTTON_FLASH , fade, .8);
 			if(flashingPhase < flashMillis/2 && outOfMoves()) drawButtonHighlight(cx[BUT_SEL_CANV], MOVES_DISPLAY, COLOR_BUTTON_FLASH , fade, 1.005);
 		}
-		else if(player.state == IDLE && player.history.length && vectorEqual(player.history[player.history.length - 1], player.pos))
+		else if(player.state == IDLE && player.history.length && !level.someChange && vectorEqual(player.history[player.history.length - 1].pos, player.pos))
 		{
 			
 			drawButtonHighlight(cx[BUT_SEL_CANV], UNDO_IND, COLOR_BUTTON_FLASH , fade, .8);
@@ -1403,5 +1513,37 @@ function sortLasers(lasers, playerPos)
 	return [further, match, closer];
 }
 
+function setLocks(locked = false)
+{
+	level.locked = locked;
+		
+	cx[BASE_OVER].clearRect(scrn.adjL - scrn.but, scrn.adjT - scrn.but, scrn.adjW + 2 * scrn.but, scrn.adjH + 2 * scrn.but);
+	for(var y = 0; y < level.squares.length; y += 1)
+	{
+		for(var x = 0; x < level.squares[0].length; x += 1)
+		{
+			var square = level.squares[y][x];
+			/* if(isLaserOrCover(square))
+			{
+				if(level.locked) drawSquare(x, y, LockBorder, LockBorder.imgInd, cx[BASE_OVER]);
+			}
+			else  */if([Locked, UnLocked].includes(square))
+			{
+				square = (level.locked) ? Locked : UnLocked;
+				level.squares[y][x] = square;
+				drawSquare(x,y, square);
+				if(level.locked) drawSquare(x,y, LockBorder, LockBorder.imgInd, cx[BASE_OVER]);
+			}
+		}
+	}
+	for(var i = 0; i < level.triggers.length; i += 1)
+	{	
+		var trigger = level.triggers[i];
+		if(isDefined(trigger.onOff))
+		{
+			if(level.locked) drawSquare(trigger.x, trigger.y, LockBorder, LockBorder.imgInd, cx[BASE_OVER]);			
+		}
+	}
+}
 
 
