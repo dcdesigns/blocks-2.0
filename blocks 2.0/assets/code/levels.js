@@ -385,6 +385,33 @@ var GAME_LEVELS = [
 
 	{
 		map: [
+			"LL-ZGGR",
+			"GL-LGZG",
+			"GL-ZGZX",
+			"GL-LGZZ",
+			"LL-ZGG/"
+		],
+		player: [0,2],
+		moves: 3
+	},
+
+	{
+		map: [
+			"GZGEEEEE",
+			"ZGZGEEEE",
+			"GZIZIEEE",
+			"EGZTZIEE",
+			"EEIZZZIE",
+			"EEEIZIZG",
+			"EEEEIZXE",
+			"EEEEEIEE"
+		],
+		player: [0,0],
+		moves: 4
+	},
+
+	{
+		map: [
 			"IXIIIIPIII",
 			"LLLLLLLLLL",
 			"IPIIIIIII|"
@@ -434,7 +461,7 @@ var GAME_LEVELS = [
 			"EGGPGGEEE",
 			"EEEEEIEEE",
 			"E-I-I/EIX",
-			"EEEEEEEEE",
+			"EEEEZEEEE",
 			"GGGPEGEEE"
 		],
 		specialCodes: [
@@ -529,6 +556,26 @@ var GAME_LEVELS = [
 
 	{
 		map: [
+			"GZPZ/IIGGR",
+			"GZXZGGIIIG",
+			"IZZZGIIIIB",
+			"RR/GIIIIZZ",
+			"/GGIIIIIZB",
+			"|GIIIIIIZG",
+			"R-------ZP"
+		],
+		specialCodes: [
+			{x: 2, y:0, type: Portal, portalGroup: PortalZero},
+			{x: 9, y:2, type: PortalB, portalGroup: PortalZero},
+			{x: 9, y:4, type: PortalB, portalGroup: PortalZero},
+			{x: 9, y:6, type: Portal, portalGroup: PortalZero},
+		],
+		player: [0,0],
+		moves: 6
+	},
+
+	{
+		map: [
 			"LLLGLLL",
 			"LLLLLLL",
 			"GIIWIIX",
@@ -613,53 +660,6 @@ var GAME_LEVELS = [
 		],
 		player: [0,0],
 		moves: 4
-	},
-
-	{
-		map: [
-			"LL-ZGGR",
-			"GL-LGZG",
-			"GL-ZGZX",
-			"GL-LGZZ",
-			"LL-ZGG/"
-		],
-		player: [0,2],
-		moves: 3
-	},
-
-	{
-		map: [
-			"GZGEEEEE",
-			"ZGZGEEEE",
-			"GZIZIEEE",
-			"EGZTZIEE",
-			"EEIZZZIE",
-			"EEEIZIZG",
-			"EEEEIZXE",
-			"EEEEEIEE"
-		],
-		player: [0,0],
-		moves: 4
-	},
-
-	{
-		map: [
-			"GZPZ/IIGGR",
-			"GZXZGGIIIG",
-			"IZZZGIIIIB",
-			"RR/GIIIIZZ",
-			"/GGIIIIIZB",
-			"|GIIIIIIZG",
-			"R-------ZP"
-		],
-		specialCodes: [
-			{x: 2, y:0, type: Portal, portalGroup: PortalZero},
-			{x: 9, y:2, type: PortalB, portalGroup: PortalZero},
-			{x: 9, y:4, type: PortalB, portalGroup: PortalZero},
-			{x: 9, y:6, type: Portal, portalGroup: PortalZero},
-		],
-		player: [0,0],
-		moves: 6
 	},
 
 	{
@@ -853,26 +853,22 @@ var GAME_LEVELS = [
 
 	{
 		map: [
-			"IIXII",
-			"IIIII",
-			"IIIII",
-			"IIIII",
-			"IIZII",
-			"VU-GG",
-			"UUGGZ",
-			"KG-GG",
-			"SGEGG",
-			"2GGG1"
+			"1K2G3IIIII",
+			"GGGIIKIIII",
+			"GG-IKIZIIX",
+			"GGGIIIIIII",
+			"GGGG/IIIII"
 		],
 		specialCodes: [
-			{x: 2, y:4, timer: TimerTrigger, direction: RotateClockwise, inc: RotateSingle},
-			{x: 2, y:5, trigger: SwitchTrigger2, direction: RotateCounterClockwise, inc: RotateDouble},
-			{x: 4, y:6, trigger: SwitchTrigger1, direction: RotateClockwise, inc: RotateSingle},
-			{x: 0, y:7, trigger: SwitchTrigger2, direction: RotateClockwise, inc: RotateSingle},
-			{x: 2, y:7, trigger: SwitchTrigger1, direction: RotateClockwise, inc: RotateDouble},
+			{x: 1, y:0, trigger: SwitchTrigger2, direction: RotateClockwise, inc: RotateSingle},
+			{x: 5, y:1, trigger: SwitchTrigger2, direction: RotateClockwise, inc: RotateSingle},
+			{x: 2, y:2, trigger: SwitchTrigger1, direction: RotateClockwise, inc: RotateSingle},
+			{x: 4, y:2, trigger: SwitchTrigger2, direction: RotateClockwise, inc: RotateSingle},
+			{x: 6, y:2, trigger: SwitchTrigger2, direction: RotateClockwise, inc: RotateSingle},
+			{x: 4, y:4, trigger: SwitchTrigger3, direction: RotateClockwise, inc: RotateSingle},
 		],
-		player: [2,9],
-		moves: 6
+		player: [0,2],
+		moves: 5
 	},
 
 ];
