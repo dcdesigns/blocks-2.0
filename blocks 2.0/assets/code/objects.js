@@ -205,6 +205,10 @@ function nextLevel()
 		for(var x = 0; x < level.size[0]; x += 1)
 		{
 			var square = sqCodes[curLevel.map[y][x]];
+			/* if(square == Lava)
+			{
+				square = EmptySquare;
+			} */
 			if(square == Locked)
 			{
 				level.locked = true;

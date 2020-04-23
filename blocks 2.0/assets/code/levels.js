@@ -11,7 +11,7 @@ var GAME_LEVELS = [
 
 	{
 		map: [
-			"GGGGX"
+			"GGGEX"
 		],
 		player: [0,0],
 		moves: 2
@@ -213,7 +213,7 @@ var GAME_LEVELS = [
 
 	{
 		map: [
-			"GGTGTGTGX"
+			"GGTGTGTEX"
 		],
 		player: [0,0],
 		moves: 1
@@ -508,7 +508,7 @@ var GAME_LEVELS = [
 			{x: 2, y:4, type: Portal, portalGroup: PortalZero},
 		],
 		player: [3,3],
-		moves: 3
+		moves: 2
 	},
 
 	{

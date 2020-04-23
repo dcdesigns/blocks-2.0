@@ -1240,9 +1240,9 @@ function animate()
 		}
 		else if(player.state == IDLE && player.history.length && !level.someChange && vectorEqual(player.history[player.history.length - 1].pos, player.pos))
 		{
-			
-			drawButtonHighlight(cx[BUT_SEL_CANV], UNDO_IND, COLOR_BUTTON_FLASH , fade, .8);
-			if(flashingPhase < flashMillis/2) drawButtonHighlight(cx[BUT_SEL_CANV], MOVES_DISPLAY, COLOR_BUTTON_FLASH , fade, 1.005);
+			undoBut.action();
+			//drawButtonHighlight(cx[BUT_SEL_CANV], UNDO_IND, COLOR_BUTTON_FLASH , fade, .8);
+			//if(flashingPhase < flashMillis/2) drawButtonHighlight(cx[BUT_SEL_CANV], MOVES_DISPLAY, COLOR_BUTTON_FLASH , fade, 1.005);
 		}
 		else
 		{

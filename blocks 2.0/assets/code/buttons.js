@@ -272,7 +272,7 @@ function toggleSound()
  //screen buttons
 var butts = [
 	[scrnButNotFull, restartBut, undoBut, hintBut, muteBut, menuBut, movesBut],
-	[scrnButNotFull, nextBut, prevBut, menuBut, userBut]
+	[scrnButNotFull, nextBut, prevBut, menuBut]
 ];
 
 
