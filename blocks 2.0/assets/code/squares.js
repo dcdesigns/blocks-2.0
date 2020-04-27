@@ -516,7 +516,7 @@ var AnyJumpTrigger = {
 
 var TimerTrigger = {
 	imgInd: t_ind++,
-	limit: 1500,
+	limit: timerMillis,
 	sound: gearSnd,
 };
 

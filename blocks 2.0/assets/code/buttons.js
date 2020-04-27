@@ -258,6 +258,14 @@ var unMuteBut = {
 	}
 };
 
+var mailBut = {
+	imgInd: t_ind++,
+	ignore: false,
+	action: function(){
+		window.open('mailto:hello.dcdesigns@gmail.com?subject=puzzle game feedback');
+	}
+};
+
 function toggleSound()
 {
 	val = g.gain.value ? 0 : 1;
@@ -272,7 +280,7 @@ function toggleSound()
  //screen buttons
 var butts = [
 	[scrnButNotFull, restartBut, undoBut, hintBut, muteBut, menuBut, movesBut],
-	[scrnButNotFull, nextBut, prevBut, menuBut]
+	[scrnButNotFull, nextBut, prevBut, mailBut, menuBut]
 ];
 
 

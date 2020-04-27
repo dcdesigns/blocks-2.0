@@ -1394,7 +1394,11 @@ function animate()
 			playerSideA = COLOR_PLAYER_SIDEA_BURN;
 			playerSideB = COLOR_PLAYER_SIDEB_BURN;
 		}
+		var auraR = 5;
 		draw3DSquare(player.pos, player.z, playerThickness, player.theta, player.radius, player.r2, player.r1,CX, playerTop, playerSideA, playerSideB, player.opacity, false, false, playerNegRScale);
+    
+		//draw3DSquare(player.pos, player.z - auraR, playerThickness + 2 * auraR, player.theta, player.radius + auraR, player.r2, player.r1,CX, 'red', 'red', 'red', 0.2, false, false, playerNegRScale);
+		
 		
 		if(level.laserMatch != null) draw3DSquare(level.laserMatch, player.z + playerThickness, 3000, 0, laserRad, scrn.r2, scrn.r1, cx[ABOVE_BASE], COLOR_BUILDING_TOP, 'red', 'red', 1, false, false, 1,1);
 		/* //draw matching laser
