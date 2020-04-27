@@ -89,7 +89,7 @@ const imgBuffer = .05;
 const sqBuffer = .07;
 const bridgeBufferScale = 7;
 
-const rewindRate = .13;
+const rewindRate = .23;
 const closeLimit = .03;
 
 
