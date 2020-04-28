@@ -385,6 +385,18 @@ var GAME_LEVELS = [
 
 	{
 		map: [
+			"GLLLLLLLLX",
+			"GILLLLLLLG",
+			"GIILLLLLLG",
+			"GIIILLLLLG",
+			"GIIIILLLLG"
+		],
+		player: [0,0],
+		moves: 5
+	},
+
+	{
+		map: [
 			"G/IILLLLGX",
 			"GIEEEEEEEE",
 			"GIEEEEEEEE",
