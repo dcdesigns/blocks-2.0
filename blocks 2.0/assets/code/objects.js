@@ -232,7 +232,9 @@ function nextLevel()
 			if(isDefined(square.animate) == "undefined")  */
 			if(isDefined(square.animate) && square.animate !== null)
 			{
-				level.animators.push({ind_x: x, ind_y: y, time: 0, ind: square.animate.minInd, animate: square.animate});
+				var rnd = square.animate.minInd + Math.floor(Math.random() * (square.animate.maxInd - square.animate.minInd + 1));
+				console.log(square.animate.minInd, square.animate.maxInd, rnd);
+				level.animators.push({ind_x: x, ind_y: y, time: 0, ind: rnd, animate: square.animate});
 			}
 
 			/* if(isLaserOrCover(square))
@@ -290,6 +292,9 @@ var player = {
 	//fading
 	opacity: 1,
 	opacity_rate: 1,
+	
+	//temperature
+	temp: 0,
 	
 	//winning
 	goalLoops: 0,
@@ -586,19 +591,32 @@ function killFade()
 	player.fading = false;
 }
 
-function killAll(force = true)
+function killTemp(force = 0)
+{
+	if(player.temp > 0 && force == 0)
+	{
+		playSound(BACK_SOUNDS, shield0);
+	}
+	player.temp = 0;
+}
+
+
+function killAll(force = 1)
 {
 	killXY();
 	killZ();
 	killSpin();
 	
 	player.theta = 0;
-	if(force || ![BURNING].includes(player.state))
+	if(force == 1 || ![BURNING].includes(player.state))
 	{
 		player.state = IDLE;
 		killFade();
+		killTemp();
+		//cx[BASE_TEMP].clearRect(scrn.adjL - scrn.but, scrn.adjT - scrn.but, scrn.adjW + 2 * scrn.but, scrn.adjH + 2 * scrn.but);
 	}
 	player.jumping = false;
+	//cx[BASE_TEMP].clearRect(scrn.adjL - scrn.but, scrn.adjT - scrn.but, scrn.adjW + 2 * scrn.but, scrn.adjH + 2 * scrn.but);
 }
 
 function startFade(rate = opacity_rate_init)

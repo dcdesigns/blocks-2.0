@@ -53,9 +53,9 @@ var GAME_LEVELS = [
 
 	{
 		map: [
-			"LGLLLXL",
-			"GGLLLLL",
-			"LLLGLGL"
+			"GGLLGX",
+			"GGLGGG",
+			"GLLGGG"
 		],
 		player: [0,1],
 		moves: 3
@@ -190,14 +190,14 @@ var GAME_LEVELS = [
 	{
 		map: [
 			"GIXG",
-			"IILI",
-			"GLIG",
-			"LIII",
-			"IILI",
+			"IIEI",
+			"GEIG",
+			"EIII",
+			"IIEI",
 			"GGGG",
 			"IIII",
 			"IIII",
-			"IIII"
+			"IIGI"
 		],
 		player: [2,8],
 		moves: 4
@@ -245,11 +245,11 @@ var GAME_LEVELS = [
 
 	{
 		map: [
-			"EEGTTLGE",
+			"EEGTTEGE",
 			"EEEEEEEE",
 			"EGTTTIGE",
 			"EEEEEEEE",
-			"EGIIITLX"
+			"EGIIITEX"
 		],
 		player: [2,0],
 		moves: 5
@@ -269,9 +269,9 @@ var GAME_LEVELS = [
 
 	{
 		map: [
-			"EEGTTLGEEE",
+			"EEGTTEGEEE",
 			"GIETTGEEEE",
-			"IGITTTLIIX"
+			"IGITTTEIIX"
 		],
 		player: [2,0],
 		moves: 5
@@ -279,8 +279,8 @@ var GAME_LEVELS = [
 
 	{
 		map: [
-			"GIIIIIIITLG",
-			"GGILGTIIIGG",
+			"GIIIIIIITEG",
+			"GGIEGTIIIGG",
 			"IIIGIITXIII"
 		],
 		player: [1,1],
@@ -385,6 +385,29 @@ var GAME_LEVELS = [
 
 	{
 		map: [
+			"G/IILLLLGX",
+			"GIEEEEEEEE",
+			"GIEEEEEEEE",
+			"EGEEEEEEEE"
+		],
+		player: [0,0],
+		moves: 4
+	},
+
+	{
+		map: [
+			"EEE-EEE-EE",
+			"G/IILLLLGX",
+			"GIEEE-EEE/",
+			"GGEEEEEEEE",
+			"EEEEEEEEEE"
+		],
+		player: [0,1],
+		moves: 3
+	},
+
+	{
+		map: [
 			"LL-ZGGR",
 			"GL-LGZG",
 			"GL-ZGZX",
@@ -474,14 +497,14 @@ var GAME_LEVELS = [
 
 	{
 		map: [
-			"LGPLLLLLL",
-			"LBGTLIIIX",
-			"LLTLLLLLL",
-			"LLLLLLLLL",
-			"LLILLLLGL",
-			"LGGLLLGGL",
-			"LGGLTLBPL",
-			"LLLLLLLLL"
+			"EGPEEEEEE",
+			"EBGTEIIIX",
+			"EETEEEEEE",
+			"EEEEEEEEE",
+			"EEIEEEEGE",
+			"EGGEEEGGE",
+			"EGGETEBPE",
+			"EEEEEEEEE"
 		],
 		specialCodes: [
 			{x: 2, y:0, type: Portal, portalGroup: PortalZero},
@@ -513,12 +536,11 @@ var GAME_LEVELS = [
 
 	{
 		map: [
-			"LLLLLLX",
-			"LBLLLLI",
+			"EEEEEEX",
+			"EBEEEEI",
 			"GIIIIPI",
-			"LPTLIGL",
-			"LLLLLGB",
-			"LLLLLLL"
+			"EPTEIGE",
+			"EEEEEGB"
 		],
 		specialCodes: [
 			{x: 1, y:1, type: PortalB, portalGroup: PortalZero},
@@ -532,17 +554,17 @@ var GAME_LEVELS = [
 
 	{
 		map: [
-			"GGBGTILGII",
+			"GGBGTIEGII",
 			"IITIIIIIII",
 			"IIIIIIIIII",
 			"IIIIIIIIII",
-			"PLIILLLRLG",
-			"LLILLLLLLL",
-			"TLGLLLLLLP",
-			"LLLLLGLLLG",
-			"TLLXLBLLLL",
-			"GLLILLLLLL",
-			"GLGLLLLLLL"
+			"PEIIEEEREG",
+			"EEIEEEEEEE",
+			"TEGEEEEEEP",
+			"EEEEEGEEEG",
+			"TEEXEBEEEE",
+			"GEEIEEEEEE",
+			"GEGEEEEEEE"
 		],
 		specialCodes: [
 			{x: 2, y:0, type: PortalB, portalGroup: PortalZero},
@@ -576,11 +598,11 @@ var GAME_LEVELS = [
 
 	{
 		map: [
-			"LLLGLLL",
-			"LLLLLLL",
+			"EEEGEEE",
+			"EEEEEEE",
 			"GIIWIIX",
-			"LLIIILL",
-			"LLLGLLL"
+			"EEIIIEE",
+			"EEEGEEE"
 		],
 		player: [3,4],
 		moves: 3
@@ -588,11 +610,11 @@ var GAME_LEVELS = [
 
 	{
 		map: [
-			"GL-LGLG",
-			"LLLLLLL",
-			"GLWLWLC",
-			"LLLLLLL",
-			"GL-LLLX"
+			"GE-EGEG",
+			"EEEEEEE",
+			"GEWEWEC",
+			"EEEEEEE",
+			"GE-EEEX"
 		],
 		player: [0,2],
 		moves: 2
@@ -769,7 +791,7 @@ var GAME_LEVELS = [
 	{
 		map: [
 			"/G//R/R///---RR",
-			"IIIIIIIIIIILIIX",
+			"IIIIIIIIIIIEIIX",
 			"IIIIIIIIIIIIGII",
 			"IIIIIIIIIIIIIII",
 			"IIIIIIIIIIIIIGI",

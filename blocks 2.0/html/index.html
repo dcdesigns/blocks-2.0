@@ -16,7 +16,8 @@
 	<canvas id="canv6" style="position: absolute; left: 0; top: 0; z-index: 6;"></canvas>
 	<canvas id="canv7" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>
 	<canvas id="canv8" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>
-	<canvas id="canv9" oncontextmenu="return false;" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>	
+	<canvas id="canv9" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>
+	<canvas id="canv10" oncontextmenu="return false;" style="position: absolute; left: 0; top: 0; z-index: 7;"></canvas>	
 </div>
 
 <script>
@@ -64,8 +65,9 @@
 	const BASE = 5;
 	const BASE_OVER = 6;
 	const BUT_SEL_CANV = 7;
-	const ABOVE_BASE = 8;
-	const BUT_CANV = 9;
+	const BASE_TEMP = 8;
+	const ABOVE_BASE = 9;
+	const BUT_CANV = 10;
 
 	const CLICK_START = 0;
 	const CLICK_MOVE = 1;
@@ -96,13 +98,14 @@
 	const Pi_2 = Math.PI/2;
 	const Pi3_2 = Pi_2 * 3;
 
-	var colorsImg, butImg, squareImg, playerImg, numbersImg;
+	var colorsImg, butImg, squareImg, playerImg, numbersImg, oceanImg;
 	var images =  [
 		[assets + 'pics/colors.svg', "colorsImg"],
 		[assets + 'pics/buttons.svg', "butImg"], 
 		[assets + 'pics/squares.svg', "squareImg"],
 		[assets + 'pics/player.svg', "playerImg"],
-		[assets + 'pics/numbers.svg', "numbersImg"]
+		[assets + 'pics/numbers.svg', "numbersImg"],
+		//[assets + 'pics/ocean.jpg', "oceanImg"]
 	];
 	
 	var jumpSnd = 0;
@@ -122,6 +125,12 @@
 	var offSnd = 14;
 	var clankSnd = 15;
 	var iceHitSnd = 16;
+	var shield0 = 17;
+	var shield1 = 18;
+	var shield2 = 19;
+	var shield3 = 20;
+	var shield4 = 21;
+
 	
 	var soundFile = assets + 'audio/gameSounds.mp3';
 	var soundOrder = [
@@ -141,7 +150,12 @@
 		[onSnd, 1],
 		[offSnd, 1],
 		[clankSnd, .5],
-		[iceHitSnd, .5]
+		[iceHitSnd, .5],
+		[shield0, .5],
+		[shield1, .5],
+		[shield2, .5],
+		[shield3, .5],
+		[shield4, .5],
 
 	];
 
@@ -498,6 +512,8 @@
 		
 		setColors();
 		
+		//turn sound off by default
+		//toggleSound();
 		
 		//load the first level
 		level.index = firstLevel - 1;
@@ -506,6 +522,8 @@
 			level.index = GAME_LEVELS.length - 2;
 		}
 		nextLevel();
+		
+		
 		
 		//start the game loop
 		animate();

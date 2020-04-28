@@ -19,6 +19,7 @@ var Goal = {
 	theme: winTheme,
 	act:  function()
 	{
+		killTemp(1);
 		if(player.state == BURNING || level.activated < level.activators.length)
 		{
 			playSound(ACTION_SOUNDS, grassSnd);
@@ -27,6 +28,7 @@ var Goal = {
 		else
 		{
 			killXY();
+			
 			if(player.state == ACTIVE)
 			{
 				playSound(THEME_SOUNDS, winTheme);
@@ -60,20 +62,45 @@ var EmptySquare = {
 	}
 };
 
+function getShieldNumber(shieldVal)
+{
+	if(shieldVal == 0) return shield0;
+	else if(shieldVal == 1) return shield1;
+	else if(shieldVal == 2) return shield2;
+	else if(shieldVal == 3) return shield3;
+	else if(shieldVal == 4) return shield4;
+	
+	return null;
+}
+
 var Lava = {
-	imgInd:  t_ind++,
-	animate: null, //{time: 500, minInd: 2, maxInd: 4},
-	act:  function()
+	imgInd:  t_ind,
+	animate: {time: 200, minInd: t_ind, maxInd: t_ind + 4},
+	act:  function(nowSq, prevSq)
 	{
-		if(player.state != BURNING) playSound(ACTION_SOUNDS, lavaSnd);
-		killXY();
-		startFade();
-		slowSpin();
+		//if((nowSq != prevSq)) playSound(ACTION_SOUNDS, lavaSnd);
+		if((player.state != BURNING)) playSound(ACTION_SOUNDS, lavaSnd);
+		
 		player.jumping = false;
-		player.state = BURNING;
+		player.temp -= 1;
+		var snd = getShieldNumber(player.temp);	
+		if(snd !== null)
+		{
+			playSound(BACK_SOUNDS, snd);
+		}
+		
+		if(player.temp < 0)
+		{
+			killXY();
+			startFade();	
+			player.state = BURNING;
+			slowSpin();
+		}
+		else slowSpin(lavaTrailSpinAlpha);
 
 	}
 };
+t_ind += 5;
 
 var Ice = {
 	imgInd:  t_ind++,
@@ -93,6 +120,17 @@ var Ice = {
 		}
 		player.jumping = false;
 		slowSpin(alpha_ice);
+		if(player.state !== BURNING)
+		{
+			player.temp += 1;//iceTemp/2 * vectorMaxAbs(player.vel);
+			var snd = getShieldNumber(player.temp);	
+			if(snd !== null)
+			{
+				playSound(BACK_SOUNDS, snd);
+			}
+			player.temp = Math.min(maxIceShield, player.temp);
+		}
+
 	}
 };
 
@@ -185,6 +223,7 @@ var Laser = {
 		level.laserMatch = roundVector(player.pos);
 		//startFade(opacity_rate_laser);
 		player.state = BURNING;
+		player.temp = -1;
 		slowSpin();
 		stopSound(ACTION_SOUNDS);
 		playSound(BACK_SOUNDS, laserSnd); //todo make a laser sizzle sound
@@ -195,6 +234,7 @@ var Laser = {
 		level.laserMatch = roundVector(player.pos);
 		if(player.state != BURNING)
 		{
+			player.temp = -1;
 			level.laserFrames = 0;
 			//startFade(opacity_rate_laser);
 			player.state = BURNING;

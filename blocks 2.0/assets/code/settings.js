@@ -14,12 +14,21 @@ const targetAlphaMax = .5;
 const optionAlphaMin = .15;
 const optionAlphaMax = .6;
 const targetMillis = 3200;
-const playerMillis = 450;
-const timerMillis = 1000;
+const playerMillis = 400;
+const timerMillis = 2 * playerMillis;
 const flashMillis = 5000;
-const playerMoveRotation = 1;
+const playerMoveRotation = .5;
 const boardBuffer = 0.5;
-
+const freezeRate = .8/playerMillis;
+const auraRscale = 1.2;
+const auraAddscale = .4;
+const auraWidthScale = .15;
+const auraCol = [24,119,254];
+const auraMax = [190,255,254];
+const auraOpacity = 0.6;
+const maxIceShield = 4;
+const lavaTrailOpacity = .2;
+const lavaTrailSpinAlpha = .95;
 const idleWaitMillis = 30000;
 
 const maxSquare = 200;

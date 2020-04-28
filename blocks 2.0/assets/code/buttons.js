@@ -67,7 +67,9 @@ var restartBut = {
 		{
 			
 			//player.state = IDLE;
+			drawTempLava();
 			player.state = REWIND;
+			player.temp = 0;
 			playSound(ACTION_SOUNDS, swoopSnd);
 			gameOver = false;
 			player.rewindPos = player.history[0].pos;
@@ -133,7 +135,9 @@ var undoBut = {
 		{
 			
 			//player.state = IDLE;
+			//drawTempLava();
 			player.state = REWIND;
+			player.temp = 0;
 			playSound(ACTION_SOUNDS, swoopSnd);
 			gameOver = false;
 			var hist = player.history.pop();
@@ -282,5 +286,6 @@ var butts = [
 	[scrnButNotFull, restartBut, undoBut, hintBut, muteBut, menuBut, movesBut],
 	[scrnButNotFull, nextBut, prevBut, mailBut, menuBut]
 ];
+
 
 

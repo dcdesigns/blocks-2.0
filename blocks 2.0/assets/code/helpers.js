@@ -39,7 +39,16 @@ function vectorEqual(v1, v2, threshold = 0.1)
 	return true;
 }
 
-
+function vectorMaxAbs(v)
+{
+	var max = 0;
+	for(i = 0; i < v.length; i += 1)
+	{
+		max = Math.max(max, Math.abs(v[i] * playerMillis));
+	}
+	console.log(v, max);
+	return max;
+}
 
 function vectorNonZero(v)
 {

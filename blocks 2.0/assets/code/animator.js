@@ -591,13 +591,75 @@ function setNight(nowCX)
 	nowCX.globalAlpha = nightAmt;
 }
 
+function interpColor(xmin, x, xmax, minCol, maxCol)
+{
+	var rgb = 'RGB(';
+	if(xmin == xmax)
+	{
+		for(var i = 0; i < 3; i += 1)
+		{
+			rgb += Math.floor(minCol[i]);
+			if(i < 2) rgb += ',';
+			else rgb += ')';
+		}
+	}
+	else
+	{
+		var xRatio = (x - xmin) / (xmax - xmin);
+		for(var i = 0; i < 3; i += 1)
+		{
+			rgb += Math.floor(xRatio * (maxCol[i] - minCol[i]) + minCol[i]);
+			if(i < 2) rgb += ',';
+			else rgb += ')';
+		}
+	}
+	return rgb;
+}
+
+
+function drawTempLava()
+{
+	var nowCX = cx[BASE_TEMP];
+	nowCX.clearRect(scrn.adjL - scrn.but, scrn.adjT - scrn.but, scrn.adjW + 2 * scrn.but, scrn.adjH + 2 * scrn.but);
+	nowCX.globalAlpha = lavaTrailOpacity;
+	nowCX.globalCompositeOperation = 'source-over';
+	for(var i = 0; i < level.size[0]; i += 1)
+	{
+		for(var j = 0; j < level.size[1]; j += 1)
+		{
+			var sq = level.squares[j][i];
+			if(sq == Lava) drawSquare(i, j, sq, sq.imgInd, nowCX);
+		}
+	}
+	nowCX.globalCompositeOperation = 'source-atop';
+	nowCX.globalAlpha = 1;
+}
+
 //draws the buttons and game board
 function drawBase()
 {
 	//reset and draw a black background
-	if(paused) cx[GROUND].fillStyle = 'black';
-	else  cx[GROUND].fillStyle = COLOR_BACK;
-	cx[GROUND].fillRect(scrn.adjL, scrn.adjT, scrn.adjW, scrn.adjH);
+	if(paused)
+	{
+		cx[GROUND].fillStyle = 'black';
+		cx[GROUND].fillRect(scrn.adjL, scrn.adjT, scrn.adjW, scrn.adjH);
+	}
+	else
+	{
+	
+		cx[GROUND].fillStyle = COLOR_BACK; 
+		cx[GROUND].fillRect(scrn.adjL, scrn.adjT, scrn.adjW, scrn.adjH);
+		
+		
+		/* var w = oceanImg.width;
+		var h = oceanImg.height;
+		var adjW = scrn.adjW/scrn.adjH * h;
+		var adjH = scrn.adjH/scrn.adjW * w;
+		if(adjW < w) w = adjW;
+		else h = adjH;
+		cx[GROUND].drawImage(oceanImg, 0,0, w, h, scrn.adjL, scrn.adjT, scrn.adjW, scrn.adjH); */
+	}
+	
 	cx[BACK].clearRect(0,0, scrn.w,scrn.h);
 	cx[BUT_CANV].clearRect(0, 0, canv[BASE].width, canv[BASE].height);
 	cx[BASE].clearRect(scrn.adjL, scrn.adjT, scrn.adjW, scrn.adjH);
@@ -618,9 +680,11 @@ function drawBase()
 	
 	if(!paused)
 	{
+		var sorted = [];
+		var dists = [];
 		var roads = drawRoads();
-		var sorted = roads[0]
-		var dists = roads[1];
+		sorted = roads[0]
+		dists = roads[1];
 
 		for(var x = 0; x < level.size[0]; x += 1)
 		{
@@ -687,6 +751,8 @@ function drawBase()
 			}
 		}
 		setLocks(level.locked);
+		
+		drawTempLava();
 	}
 	else
 	{
@@ -975,7 +1041,33 @@ function posToPix(pos)
 	return [(pos[0] + .5) * scrn.sq, (pos[1] + .5) * scrn.sq];
 }
 
+function drawIceShield(p, height, radius, radiusW, radiusAdd, nowCX, colorMin, colorMax, fadeAlpha, negRScale = 1, posScale = posRadiusScale)
+{
+	if(height <= fallLimit) return;
 
+	//convert postion to pixels
+	var pixPos = posToPix(p);
+	
+	//scale x, y, radius
+	var adjX = scrn.centerX + adjust(height, pixPos[0] - scrn.centerX, posXYScale);
+	var adjY = scrn.centerY + adjust(height, pixPos[1] - scrn.centerY, posXYScale);
+	//console.log(p[0], p[1], pixPos[0], pixPos[1]);
+
+	var adjR = adjust(height, radius, posScale, negRScale);	
+	var adjAdd = adjust(height, radiusAdd, posScale, negRScale);
+	
+	nowCX.globalAlpha = fadeAlpha;
+	nowCX.lineWidth =  adjust(height, radiusW, posScale, negRScale);;
+	var nowR = adjR;
+	for(var i = 0; i < player.temp; i += 1)
+	{
+		nowCX.strokeStyle = interpColor(0, i, maxIceShield - 1, colorMin, colorMax);
+		nowCX.beginPath();
+		nowCX.arc(adjX, adjY, nowR, 0, 2 * Math.PI);
+		nowCX.stroke();
+		nowR += adjAdd;
+	}
+}
 function draw3DSquare(p, height, self_height, theta, radius, r2, r1, nowCX, topColor, sideAColor, sideBColor, fadeAlpha, strokeTop, strokeSides, negRScale = 1, posScale = posRadiusScale)
 {
 	if(height <= z_min) return;
@@ -1380,6 +1472,21 @@ function animate()
 			draw3DSquare(further[i], 0,3000, 0, laserRad, scrn.r2, scrn.r1, cx[ABOVE_BASE], COLOR_BUILDING_TOP, 'red', 'red', 1, false, false, 1,1);
 		} */
 		
+		if(player.state !== IDLE && player.state != REWIND && player.z == 0 && vectorNonZero(player.vel))
+		{
+			var col = 'dark-gray';
+			draw3DSquare(player.pos, player.z, 0, player.theta, player.radius, player.r2, player.r1,cx[BASE_TEMP], col, col, col, 1, false, false, playerNegRScale);
+		}
+		
+		if(player.temp > 0)
+		{
+			var auraR = player.radius * auraRscale;
+			var auraAdd = player.radius * auraAddscale;
+			var auraWidth = auraR * auraWidthScale;
+			drawIceShield(player.pos, player.z, auraR, auraWidth, auraAdd, CX, auraCol, auraMax, auraOpacity, playerNegRScale);
+			
+		}
+		
 		if(player.opacity == 1 && player.state !== FALLING) drawShadow(player.pos, player.z, player.theta, player.radius, CX, 'black', shadowAlpha);
 		var playerTop, playerSideA, playerSideB;
 		if(player.state != BURNING)
@@ -1394,10 +1501,8 @@ function animate()
 			playerSideA = COLOR_PLAYER_SIDEA_BURN;
 			playerSideB = COLOR_PLAYER_SIDEB_BURN;
 		}
-		var auraR = 5;
+		
 		draw3DSquare(player.pos, player.z, playerThickness, player.theta, player.radius, player.r2, player.r1,CX, playerTop, playerSideA, playerSideB, player.opacity, false, false, playerNegRScale);
-    
-		//draw3DSquare(player.pos, player.z - auraR, playerThickness + 2 * auraR, player.theta, player.radius + auraR, player.r2, player.r1,CX, 'red', 'red', 'red', 0.2, false, false, playerNegRScale);
 		
 		
 		if(level.laserMatch != null) draw3DSquare(level.laserMatch, player.z + playerThickness, 3000, 0, laserRad, scrn.r2, scrn.r1, cx[ABOVE_BASE], COLOR_BUILDING_TOP, 'red', 'red', 1, false, false, 1,1);
