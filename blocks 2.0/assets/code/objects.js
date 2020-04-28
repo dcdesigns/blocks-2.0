@@ -232,9 +232,9 @@ function nextLevel()
 			if(isDefined(square.animate) == "undefined")  */
 			if(isDefined(square.animate) && square.animate !== null)
 			{
-				var rnd = square.animate.minInd + Math.floor(Math.random() * (square.animate.maxInd - square.animate.minInd + 1));
-				console.log(square.animate.minInd, square.animate.maxInd, rnd);
-				level.animators.push({ind_x: x, ind_y: y, time: 0, ind: rnd, animate: square.animate});
+				var rndInd = square.animate.minInd + Math.floor(Math.random() * (square.animate.maxInd - square.animate.minInd + 1));
+				var rndTime = Math.floor(square.animate.time * Math.random());
+				level.animators.push({ind_x: x, ind_y: y, time: rndTime, ind: rndInd, animate: square.animate});
 			}
 
 			/* if(isLaserOrCover(square))

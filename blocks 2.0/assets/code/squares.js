@@ -75,7 +75,7 @@ function getShieldNumber(shieldVal)
 
 var Lava = {
 	imgInd:  t_ind,
-	animate: {time: 200, minInd: t_ind, maxInd: t_ind + 4},
+	//animate: {time: 200, minInd: t_ind, maxInd: t_ind + 4},
 	act:  function(nowSq, prevSq)
 	{
 		//if((nowSq != prevSq)) playSound(ACTION_SOUNDS, lavaSnd);
