@@ -1043,7 +1043,7 @@ function posToPix(pos)
 
 function drawIceShield(p, height, radius, radiusW, radiusAdd, nowCX, colorMin, colorMax, fadeAlpha, negRScale = 1, posScale = posRadiusScale)
 {
-	if(height <= fallLimit) return;
+	if(height != 0) return;
 
 	//convert postion to pixels
 	var pixPos = posToPix(p);
