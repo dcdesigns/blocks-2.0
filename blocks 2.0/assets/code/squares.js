@@ -56,7 +56,8 @@ var EmptySquare = {
 	{
 		playSound(ACTION_SOUNDS, fallSnd);
 		killXY();
-		player.state = FALLING;
+		if(player.state == BURNING) player.state = FALLBURNING;
+		else player.state = FALLING;
 		startFade(opacity_rate_fall);
 		//startFade();
 	}
@@ -227,6 +228,7 @@ var Laser = {
 		slowSpin();
 		stopSound(ACTION_SOUNDS);
 		playSound(BACK_SOUNDS, laserSnd); //todo make a laser sizzle sound
+		playSound(ACTION_SOUNDS, lavaSnd);
 		//playSound(BACK_SOUNDS, lavaSnd);
 	},
 	act: function()

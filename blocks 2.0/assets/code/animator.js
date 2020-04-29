@@ -617,22 +617,25 @@ function interpColor(xmin, x, xmax, minCol, maxCol)
 }
 
 
-function drawTempLava()
+function drawTempLava(drawIt = true)
 {
 	var nowCX = cx[BASE_TEMP];
 	nowCX.clearRect(scrn.adjL - scrn.but, scrn.adjT - scrn.but, scrn.adjW + 2 * scrn.but, scrn.adjH + 2 * scrn.but);
-	nowCX.globalAlpha = lavaTrailOpacity;
-	nowCX.globalCompositeOperation = 'source-over';
-	for(var i = 0; i < level.size[0]; i += 1)
+	if(drawIt)
 	{
-		for(var j = 0; j < level.size[1]; j += 1)
+		nowCX.globalAlpha = lavaTrailOpacity;
+		nowCX.globalCompositeOperation = 'source-over';
+		for(var i = 0; i < level.size[0]; i += 1)
 		{
-			var sq = level.squares[j][i];
-			if(sq == Lava) drawSquare(i, j, sq, sq.imgInd, nowCX);
+			for(var j = 0; j < level.size[1]; j += 1)
+			{
+				var sq = level.squares[j][i];
+				if(sq == Lava) drawSquare(i, j, sq, sq.imgInd, nowCX);
+			}
 		}
+		nowCX.globalCompositeOperation = 'source-atop';
+		nowCX.globalAlpha = 1;
 	}
-	nowCX.globalCompositeOperation = 'source-atop';
-	nowCX.globalAlpha = 1;
 }
 
 //draws the buttons and game board
@@ -763,6 +766,8 @@ function drawBase()
 			selected: -1,
 				
 		}; */
+		
+		drawTempLava(false);
 
 		if(!buttsFlipped)
 		{
@@ -1216,7 +1221,7 @@ function animate()
 {
 	
 	var newTime = new Date();
-	var elapsed = Math.min(17, newTime - lastTime);
+	var elapsed = Math.min(40, newTime - lastTime);
 	lastTime = newTime;
 	player.targetPhase += elapsed;
 	var sinVal = Math.sin( 2 * Math.PI * player.targetPhase/targetMillis);
@@ -1418,7 +1423,7 @@ function animate()
 			}
 			else
 			{
-				if([BURNING, FALLING].includes(player.state)) numberInd = 11;
+				if([BURNING, FALLING, FALLBURNING].includes(player.state)) numberInd = 11;
 				
 				if(!buttsFlipped) cx[BUT_CANV].clearRect(scrn.butOff[paused] + scrn.but * MOVES_DISPLAY, scrn.h - scrn.but, scrn.but, scrn.but);
 				else cx[BUT_CANV].clearRect(scrn.w - scrn.but, scrn.h - scrn.butOff[paused] - scrn.but * (MOVES_DISPLAY + 1), scrn.but, scrn.but);
@@ -1474,8 +1479,12 @@ function animate()
 		
 		if(player.state !== IDLE && player.state != REWIND && player.z == 0 && vectorNonZero(player.vel))
 		{
-			var col = 'dark-gray';
-			draw3DSquare(player.pos, player.z, 0, player.theta, player.radius, player.r2, player.r1,cx[BASE_TEMP], col, col, col, 1, false, false, playerNegRScale);
+			var rounded = roundVector(player.pos);
+			if(onBoard(rounded) && level.squares[rounded[1]][rounded[0]] == Lava)
+			{
+				var col = 'dark-gray';
+				draw3DSquare(player.pos, player.z, 0, player.theta, player.radius, player.r2, player.r1,cx[BASE_TEMP], col, col, col, 1, false, false, playerNegRScale);
+			}
 		}
 		
 		if(player.temp > 0)
@@ -1487,20 +1496,21 @@ function animate()
 			
 		}
 		
-		if(player.opacity == 1 && player.state !== FALLING) drawShadow(player.pos, player.z, player.theta, player.radius, CX, 'black', shadowAlpha);
+		if(player.opacity == 1 && player.z >= 0) drawShadow(player.pos, player.z, player.theta, player.radius, CX, 'black', shadowAlpha);
 		var playerTop, playerSideA, playerSideB;
-		if(player.state != BURNING)
-		{
-			playerTop = COLOR_PLAYER_TOP;
-			playerSideA = COLOR_PLAYER_SIDEA;
-			playerSideB = COLOR_PLAYER_SIDEB;
-		}
-		else
+		if([BURNING, FALLBURNING].includes(player.state))
 		{
 			playerTop = COLOR_PLAYER_TOP_BURN;
 			playerSideA = COLOR_PLAYER_SIDEA_BURN;
 			playerSideB = COLOR_PLAYER_SIDEB_BURN;
 		}
+		else
+		{
+			playerTop = COLOR_PLAYER_TOP;
+			playerSideA = COLOR_PLAYER_SIDEA;
+			playerSideB = COLOR_PLAYER_SIDEB;
+		}
+
 		
 		draw3DSquare(player.pos, player.z, playerThickness, player.theta, player.radius, player.r2, player.r1,CX, playerTop, playerSideA, playerSideB, player.opacity, false, false, playerNegRScale);
 		

@@ -81,11 +81,14 @@
 	const ACTION_SOUNDS = 1;
 	const THEME_SOUNDS = 2;
 	var audio_tracks = [null, null, null];
+	var audio_start = [null, null, null];
+	var audio_len = [null, null, null];
 	
 	const ACTIVE = 4;
 	const IDLE = 5;
 	const BURNING = 6
 	const FALLING = 7;
+	const FALLBURNING = 12;
 	const DEAD = 8;
 	const WINNING = 9;
 	const FINISHED = 10;
@@ -247,7 +250,18 @@
 	
 	function stopSound(track)
 	{
-		if(audio_tracks[track]) audio_tracks[track].stop();
+		//console.log("track", track);
+		if(audio_start[track] !== null)
+		{
+			var now = new Date().getTime();
+			//console.log("track", track, "elapsed", now - audio_start[track], "len", audio_len[track]);
+			if((now - audio_start[track]) < audio_len[track])
+			{
+				audio_tracks[track].stop();
+			}
+			audio_len[track] = null;
+			audio_start[track] = null;
+		}
 	}
 	
 	function playSound(track, snd) 
@@ -274,6 +288,8 @@
 		}
 		//console.log("playing sound", strt, len);
 		audio_tracks[track].start(0, strt, len);
+		audio_len[track] = len * 1000;
+		audio_start[track] = new Date().getTime();
 	}
 
 

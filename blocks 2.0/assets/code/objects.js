@@ -79,7 +79,7 @@ function nextLevel()
 	level.playerStart = vectorCopy(curLevel.player);
 	
 	
-	if([BURNING, FALLING, DEAD].includes(player.state))
+	if([BURNING, FALLING, FALLBURNING, DEAD].includes(player.state))
 	{
 		player.state = IDLE;
 		killAll();
@@ -505,7 +505,8 @@ function updatePlayer(elapsed)
 					}
 					else
 					{
-						player.state = FALLING;
+						if(player.state == BURNING) player.state = FALLBURNING;
+						else player.state = FALLING;
 						startFade(opacity_rate_fall);
 						playSound(ACTION_SOUNDS, fallSnd);
 					}
@@ -561,7 +562,7 @@ function playerIdle()
 
 function failed()
 {
-	return [FALLING, BURNING, DEAD].includes(player.state) || (outOfMoves() && !([ACTIVE, WINNING].includes(player.state)));
+	return [FALLING, BURNING, FALLBURNING, DEAD].includes(player.state) || (outOfMoves() && !([ACTIVE, WINNING].includes(player.state)));
 }
 
 
@@ -649,7 +650,7 @@ function startJump(jumpType = 1, jumpVel = z_vel_init, spinVel = omega_init)
 	player.vel[1] += player.target[1] / playerMillis;
 	player.target = zeroVector();
 	startSpin(spinVel);
-	if(jumpVel < z_vel_init_goal && player.state != BURNING) player.state = ACTIVE;
+	if(jumpVel < z_vel_init_goal && !([BURNING].includes(player.state))) player.state = ACTIVE;
 }
 
 
