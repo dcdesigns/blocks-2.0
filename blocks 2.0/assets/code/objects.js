@@ -351,13 +351,17 @@ function setSquareAction(rounded)
 				//console.log("trig", trigger);
 				if(trigger.any || (trigger.trigger && trigger.x == player.pos[0] && trigger.y == player.pos[1]))
 				{	
+					console.log("trig dir", trigger.direction);
 					incTriggerIndex(trigger);
 					if(isDefined(trigger.sound))
 					{
 						backSnd = trigger.sound;
 					}	
-					level.squares[trigger.y][trigger.x] = trigger.group[trigger.ind];				
-					drawSquare(trigger.x, trigger.y, trigger.group[trigger.ind]);
+					var square = trigger.group[trigger.ind];
+					level.squares[trigger.y][trigger.x] = square;	
+					var imgInd = square.imgInd + triggerOffset(trigger);
+
+					drawSquare(trigger.x, trigger.y, square, imgInd);
 					level.someChange = true;					
 				}
 			}

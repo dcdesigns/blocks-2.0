@@ -148,7 +148,7 @@ var TrampReg = {
 
 
 var TrampHorizontal = t_ind;
-t_ind += 4;
+t_ind += 7;
 	
 var halfPi = Math.PI / 2;
 var TrampHor = {
@@ -249,7 +249,7 @@ var Laser = {
 		killXY();
 	}
 };
-t_ind += 4;
+t_ind += 6;
 
 
 var LaserCover = {
@@ -260,7 +260,7 @@ var LaserCover = {
 		killAll(false);
 	}
 };
-t_ind += 4;
+t_ind += 6;
 
 var trampRotateGroup = [TrampHor, TrampDDn, TrampVrt, TrampDUp];
 var laserGroup = [Laser, LaserCover];

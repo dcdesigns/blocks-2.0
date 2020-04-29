@@ -82,11 +82,7 @@ var restartBut = {
 			var trigger = level.triggers[i];
 			trigger.ind = trigger.init;
 			var sq = trigger.group[trigger.ind];
-			var imgInd = sq.imgInd;
-			if(isDefined(trigger.onOff))
-			{
-				imgInd += trigger.onOff;
-			}
+			var imgInd = sq.imgInd + triggerOffset(trigger);
 			level.squares[trigger.y][trigger.x] = sq;				
 			drawSquare(trigger.x, trigger.y, sq, imgInd);	
 			console.log(trigger);
@@ -97,8 +93,9 @@ var restartBut = {
 			timer.ind = timer.init;
 			var sq = timer.group[timer.ind];
 			timer.time = 0;
-			level.squares[timer.y][timer.x] = sq;				
-			drawSquare(timer.x, timer.y, sq);	
+			level.squares[timer.y][timer.x] = sq;
+			var imgInd = sq.imgInd + 4;
+			drawSquare(timer.x, timer.y, sq, imgInd);	
 			console.log(timer);
 		}
 		level.activated = 0;
@@ -128,7 +125,7 @@ var restartBut = {
 var undoBut = {
 	imgInd: t_ind++,
 	ignore: false,
-	action: function(){
+	action: function(auto = false){
 		
 		//killAll();
 		if(player.history.length)
@@ -138,7 +135,7 @@ var undoBut = {
 			//drawTempLava();
 			player.state = REWIND;
 			player.temp = 0;
-			playSound(ACTION_SOUNDS, swoopSnd);
+			if(!auto) playSound(ACTION_SOUNDS, swoopSnd);
 			gameOver = false;
 			var hist = player.history.pop();
 			player.rewindPos = hist.pos;
@@ -151,15 +148,12 @@ var undoBut = {
 				for(var i = 0; i < hist.triggers.length; i += 1)
 				{	
 					var trig = hist.triggers[i];
-					level.triggers[i].ind = trig.ind;
-					var sq = level.triggers[i].group[level.triggers[i].ind];
-					var imgInd = sq.imgInd;
-					console.log("onoff", trig.onOff);
-					if(isDefined(trig.onOff))
-					{
-						imgInd += trig.onOff;
-					}
-					if(level.triggers[i].ind != trig.ind && isDefined(trig.sound))
+					var trigger = level.triggers[i];
+					trigger.ind = trig.ind;
+					var sq = trigger.group[trigger.ind];
+					var imgInd = sq.imgInd + triggerOffset(trigger);
+			
+					if(trigger.ind != trig.ind && isDefined(trig.sound))
 					{
 						backSnd = trig.sound;
 					}

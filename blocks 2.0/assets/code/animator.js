@@ -273,6 +273,40 @@ function reConfigure()
 	}
 }
 
+function specialOffset(mod)
+{
+	var offset = 0;
+	if(isDefined(mod.timer) && mod.timer !== NoModifier) offset = 4;
+	else if(isDefined(mod.trigger) && mod.trigger !== NoModifier)
+	{
+		if(isDefined(mod.trigger.onOff))
+		{
+			offset = mod.trigger.onOff
+		}
+		else if(mod.trigger.any) offset = 5;
+		else offset = 6;
+	}
+	return offset;
+}
+
+function triggerOffset(mod)
+{
+	//console.log('trig', mod);
+	var offset = 0;
+	if(mod !== NoModifier)
+	{
+		if(isDefined(mod.onOff))
+		{
+			offset = mod.onOff
+		}
+		else if(mod.any) offset = 5;
+		else offset = 6;
+	}
+	//console.log('trig', mod, offset);
+	return offset;
+}
+
+
 function drawScaledSquare(CX,sq, x, y, l, t, sqReduc, sqSize, sqOff, imgInd)
 {
 	if(sq == EmptySquare) return;
@@ -332,13 +366,7 @@ function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
 					var code = level.specialCodes[i];
 					if(code.x == x && code.y == y)
 					{
-						if(isDefined(code.trigger))
-						{
-							if(isDefined(code.trigger.onOff))
-							{
-								imgInd += code.trigger.onOff
-							}
-						}
+						imgInd += specialOffset(code);
 						break;
 					}
 				}
@@ -729,7 +757,31 @@ function drawBase()
 		{
 			for(var j = 0; j < level.size[1]; j += 1)
 			{
-				drawSquare(i, j, level.squares[j][i]);
+				var sq = level.squares[j][i];
+				var imgInd = sq.imgInd;
+				var done = false;
+				for(var k = 0; k < level.triggers.length; k += 1)
+				{	
+					var trigger = level.triggers[k];
+					if(trigger.x == i && trigger.y == j)
+					{
+						imgInd += triggerOffset(trigger);	
+						done = true;
+						break;
+					}
+				}
+				for(var k = 0; k < level.timers.length; k += 1)
+				{	
+					if(done) break;
+					var timer = level.timers[k];
+					if(timer.x == i && timer.y == j)
+					{
+						imgInd += 4;	
+						done = true;
+						break;
+					}
+				}
+				drawSquare(i, j, level.squares[j][i], imgInd);
 			}
 		}
 		/* for(var i = 0; i < level.size[0]; i += 1)
@@ -741,7 +793,7 @@ function drawBase()
 		} */
 		
 		//rotate tramps
-		for(var i = 0; i < level.triggers.length; i += 1)
+		/* for(var i = 0; i < level.triggers.length; i += 1)
 		{	
 			var trigger = level.triggers[i];
 			
@@ -752,7 +804,7 @@ function drawBase()
 				level.squares[trigger.y][trigger.x] = sq;			
 				drawSquare(trigger.x, trigger.y, sq, sq.imgInd + trigger.onOff);				
 			}
-		}
+		} */
 		setLocks(level.locked);
 		
 		drawTempLava();
@@ -1307,7 +1359,9 @@ function animate()
 				}
 				//console.log(timer.ind);
 				level.squares[timer.y][timer.x] = timer.group[timer.ind];
-				drawSquare(timer.x, timer.y, timer.group[timer.ind]);
+				var sq = timer.group[timer.ind];
+				var imgInd = sq.imgInd + 4;
+				drawSquare(timer.x, timer.y, sq, imgInd);
 			}
 		}
 		if(backSnd !== null) playSound(BACK_SOUNDS, backSnd);
@@ -1328,18 +1382,21 @@ function animate()
 		flashingPhase += elapsed;
 		var fade = .7 * Math.abs(Math.sin( 2 * Math.PI * flashingPhase/flashMillis));
 		
-		//highlight restart/undo buttons if failed		
-		if(failed())
+		
+		var change = level.someChange;// && !level.locked;
+		//auto undo if no effect
+		if(player.state == IDLE && player.history.length && !change && vectorEqual(player.history[player.history.length - 1].pos, player.pos))
+		{
+			undoBut.action(true);
+			//drawButtonHighlight(cx[BUT_SEL_CANV], UNDO_IND, COLOR_BUTTON_FLASH , fade, .8);
+			//if(flashingPhase < flashMillis/2) drawButtonHighlight(cx[BUT_SEL_CANV], MOVES_DISPLAY, COLOR_BUTTON_FLASH , fade, 1.005);
+		}	
+		//highlight restart/undo buttons if failed	
+		else if(failed())
 		{	
 			drawButtonHighlight(cx[BUT_SEL_CANV], UNDO_IND, COLOR_BUTTON_FLASH , fade, .8);
 			drawButtonHighlight(cx[BUT_SEL_CANV], RESTART_IND, COLOR_BUTTON_FLASH , fade, .8);
 			if(flashingPhase < flashMillis/2 && outOfMoves()) drawButtonHighlight(cx[BUT_SEL_CANV], MOVES_DISPLAY, COLOR_BUTTON_FLASH , fade, 1.005);
-		}
-		else if(player.state == IDLE && player.history.length && !level.someChange && vectorEqual(player.history[player.history.length - 1].pos, player.pos))
-		{
-			undoBut.action();
-			//drawButtonHighlight(cx[BUT_SEL_CANV], UNDO_IND, COLOR_BUTTON_FLASH , fade, .8);
-			//if(flashingPhase < flashMillis/2) drawButtonHighlight(cx[BUT_SEL_CANV], MOVES_DISPLAY, COLOR_BUTTON_FLASH , fade, 1.005);
 		}
 		else
 		{
@@ -1658,7 +1715,7 @@ function setLocks(locked = false)
 	for(var i = 0; i < level.triggers.length; i += 1)
 	{	
 		var trigger = level.triggers[i];
-		if(isDefined(trigger.onOff))
+		//if(isDefined(trigger.onOff))
 		{
 			if(level.locked) drawSquare(trigger.x, trigger.y, LockBorder, LockBorder.imgInd, cx[BASE_OVER]);			
 		}

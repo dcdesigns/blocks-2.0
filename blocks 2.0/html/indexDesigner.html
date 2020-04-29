@@ -783,8 +783,17 @@ function endClick(e)
 						if(isDefined(mod.trigger))
 						{
 							//console.log("trig");
+							var sq = squares[grid[x][y]];
+							console.log("mod change", sq, isDirTramp(sq));
+							
 							modifiers[x][y].trigger = mod;
 							modifiers[x][y].timer = NoModifier;	
+							
+							//specific jump trigger only works for tramps (instant death for laser)
+							if(!isDefined(mod.onOff) && !mod.any && !isDirTramp(sq))
+							{
+								modifiers[x][y].trigger = AnyJumpTrigger;
+							}
 						}
 						else if(isDefined(mod.limit))
 						{
@@ -918,16 +927,15 @@ function keyRelease(event)
 	}
 }
 	
-function drawSquare(ind_x, ind_y, sq, img = squareImg)
+function drawSquare(ind_x, ind_y, sq, img = squareImg, imgInd = null)
 {
 	var CX = cx[MID];
 	
 	CX.save();
 	CX.translate(scrn.sx +  (ind_x + .5) * (scrn.sq), scrn.sy + (ind_y + .5) * (scrn.sq));
-	var imgInd;
 	if(sq != null)
 	{
-		imgInd = sq.imgInd;
+		if(imgInd == null) imgInd = sq.imgInd;
 		if(isDefined(sq.backInd))
 		{
 			CX.drawImage(squareImg, (sq.backInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
@@ -1005,8 +1013,16 @@ function gridChange()
 		{
 			for(var y = 0; y < numY; y += 1)
 			{
-				var square = squares[grid[x][y]]
-				drawSquare(x, y, square);
+				/* var square = squares[grid[x][y]]
+				drawSquare(x, y, square); */
+				
+				var sq = squares[grid[x][y]];
+				var imgInd = sq.imgInd;
+				var code = modifiers[x][y];
+				imgInd += specialOffset(code);
+
+				drawSquare(x, y, sq, squareImg, imgInd);
+				//drawScaledSquare(CX, sq, x, y, l, t, sqReduc, sqSize, sqOff, imgInd)
 			}
 		}
 		console.log(player);
@@ -1018,10 +1034,7 @@ function gridChange()
 				var square = squares[grid[x][y]];
 				var imgInd = square.imgInd;
 				var mod = modifiers[x][y];
-				if(isLaser(square))
-				{
-					console.log("laser", square, "mod", mod);
-				}
+
 				if(square == Portal || square == PortalB)
 				{
 					drawSquare(x, y, mod.portalGroup);
@@ -1036,14 +1049,14 @@ function gridChange()
 						drawSquare(x, y, mod.direction);
 						drawSquare(x, y, mod.inc);
 					}
-					if(mod.trigger != NoModifier)
+					/* if(mod.trigger != NoModifier && !isDefined(mod.trigger.onOff))
 					{
 						drawSquare(x, y, mod.trigger);
 					}
 					else
 					{
 						drawSquare(x, y, mod.timer);
-					}
+					} */
 				}
 			}
 		}
@@ -1263,6 +1276,22 @@ function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
 	CX.fillRect(l + (level.player[0] + .3) * sqSize, t + (level.player[1] + .3) * sqSize, sqSize * .4, sqSize * .4);
 } */
 
+function specialOffset(mod)
+{
+	var offset = 0;
+	if(isDefined(mod.timer) && mod.timer !== NoModifier) offset = 4;
+	else if(isDefined(mod.trigger) && mod.trigger !== NoModifier)
+	{
+		if(isDefined(mod.trigger.onOff))
+		{
+			offset = mod.trigger.onOff
+		}
+		else if(mod.trigger.any) offset = 5;
+		else offset = 6;
+	}
+	return offset;
+}
+
 function drawScaledSquare(CX,sq, x, y, l, t, sqReduc, sqSize, sqOff, imgInd)
 {
 	if(sq == EmptySquare) return;
@@ -1326,13 +1355,8 @@ function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
 					var code = level.specialCodes[i];
 					if(code.x == x && code.y == y)
 					{
-						if(isDefined(code.trigger))
-						{
-							if(isDefined(code.trigger.onOff))
-							{
-								imgInd += code.trigger.onOff
-							}
-						}
+						imgInd += specialOffset(code);
+						
 						break;
 					}
 				}
