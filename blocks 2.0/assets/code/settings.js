@@ -33,7 +33,7 @@ const idleWaitMillis = 30000;
 
 const maxSquare = 200;
 const maxButton = 125;
-const minMenu = 50;
+const minMenu = 55;
 
 //how much bigger the player is at jump apex
 const playerScaleTopJump = 2;
