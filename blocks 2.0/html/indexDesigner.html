@@ -110,14 +110,14 @@ var selection = {
 };
 
 var scrn = {};
-var squareImg, playerImg;
+var squareImg, squareQuickImg, playerImg;
 
 
 var images =  [
 	['blocks/pics/squares.svg', "squareImg"],
+	['blocks/pics/squaresQuick.svg', "squareQuickImg"],
 	['blocks/pics/player.svg', "playerImg"],
 ];
-
 
 
 //define script files
@@ -1163,7 +1163,7 @@ function drawMenu(indStart = 0, indEnd = GAME_LEVELS.length)
 	}
 }
 		
-function drawScaledSquare(CX,sq, x, y, l, t, sqReduc, sqSize, sqOff)
+/* function drawScaledSquare(CX,sq, x, y, l, t, sqReduc, sqSize, sqOff)
 {
 	if(sq == EmptySquare) return;
 	
@@ -1171,7 +1171,7 @@ function drawScaledSquare(CX,sq, x, y, l, t, sqReduc, sqSize, sqOff)
 
 	if(isDefined(sq.backInd))
 	{
-		CX.drawImage(squareImg, (sq.backInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+		CX.drawImage(squareQuickImg, (sq.backInd) * squareQuickImg.height + scrn.imgBuffer, scrn.imgBuffer, squareQuickImg.height - 2* scrn.imgBuffer, squareQuickImg.height - 2*scrn.imgBuffer,
 			l + sqOff + x * sqSize, t + sqOff + y * sqSize, sqReduc, sqReduc);
 		// CX.drawImage(squareImg, (sq.backInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
 			// - .5 * sqSize + sqOff, - .5 * sqSize + sqOff, sqReduc, sqReduc);
@@ -1183,7 +1183,7 @@ function drawScaledSquare(CX,sq, x, y, l, t, sqReduc, sqSize, sqOff)
 		CX.rotate(sq.imgRotate);
 		CX.translate((-.5) * sqSize, (-.5) * sqSize);
 	
-		CX.drawImage(squareImg, (sq.imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+		CX.drawImage(squareQuickImg, (sq.imgInd) * squareQuickImg.height + scrn.imgBuffer, scrn.imgBuffer, squareQuickImg.height - 2* scrn.imgBuffer, squareQuickImg.height - 2*scrn.imgBuffer,
 			sqOff, sqOff, sqReduc, sqReduc);
 		
 		CX.restore();
@@ -1191,7 +1191,7 @@ function drawScaledSquare(CX,sq, x, y, l, t, sqReduc, sqSize, sqOff)
 
 	else
 	{
-		CX.drawImage(squareImg, (sq.imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+		CX.drawImage(squareQuickImg, (sq.imgInd) * squareQuickImg.height + scrn.imgBuffer, scrn.imgBuffer, squareQuickImg.height - 2* scrn.imgBuffer, squareQuickImg.height - 2*scrn.imgBuffer,
 			l + sqOff + x * sqSize, t + sqOff + y * sqSize, sqReduc, sqReduc);
 	} 
 }
@@ -1261,8 +1261,90 @@ function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
 	}
 	CX.fillStyle = 'blue';
 	CX.fillRect(l + (level.player[0] + .3) * sqSize, t + (level.player[1] + .3) * sqSize, sqSize * .4, sqSize * .4);
-}
+} */
+
+function drawScaledSquare(CX,sq, x, y, l, t, sqReduc, sqSize, sqOff, imgInd)
+{
+	if(sq == EmptySquare) return;
 	
+	CX.save();
+	CX.translate(l +  (x + .5) * (sqSize), t + (y + .5) * (sqSize));
+
+	if(isDefined(sq.backInd))
+	{
+		CX.drawImage(squareQuickImg, (sq.backInd) * squareQuickImg.height + scrn.imgBuffer, scrn.imgBuffer, squareQuickImg.height - 2* scrn.imgBuffer, squareQuickImg.height - 2*scrn.imgBuffer,
+			- .5 * sqSize + sqOff, - .5 * sqSize + sqOff, sqReduc, sqReduc);
+	}
+	if(isDefined(sq.imgRotate) && sq.imgRotate != 'screen')
+	{
+		CX.rotate(sq.imgRotate);
+	}
+	CX.translate((-.5) * sqSize, (-.5) * sqSize);
+	
+	CX.drawImage(squareQuickImg, (imgInd) * squareQuickImg.height + scrn.imgBuffer, scrn.imgBuffer, squareQuickImg.height - 2* scrn.imgBuffer, squareQuickImg.height - 2*scrn.imgBuffer,
+		sqOff, sqOff, sqReduc, sqReduc);
+	
+	CX.restore();
+}
+
+function drawScaledLevel(levelInd, CX, l, mid_t, w, h)
+{
+	if(levelInd < 0 || levelInd > GAME_LEVELS.length -1) return;
+	
+	var level = GAME_LEVELS[levelInd];
+	var numY = level.map.length;
+	var numX = level.map[0].length;
+	
+	
+
+	
+ 	var sqSize = Math.min(w / numX, h / numY);
+	var actW = sqSize * numX;
+	var actH = sqSize * numY;
+	var sqOff = sqSize * bordPct/2;
+	var sqReduc = sqSize - 2 * sqOff;
+	
+	var t = mid_t - actH / 2;
+	t = Math.min(scrn.h - actH, t);
+	t = Math.max(0, t);
+	
+	CX.fillStyle = 'black';
+	CX.fillRect(l, t, actW, actH);
+
+	/* CX.fillStyle = 'black';
+	CX.fillRect(l, t, actW, actH); */
+	for(var x = 0; x < numX; x += 1)
+	{
+		for(var y = 0; y < numY; y += 1)
+		{
+			var sq = sqCodes[level.map[y][x]];
+			var imgInd = sq.imgInd;
+			if(isDefined(level.specialCodes))
+			{
+				for(var i = 0; i < level.specialCodes.length; i += 1)
+				{
+					var code = level.specialCodes[i];
+					if(code.x == x && code.y == y)
+					{
+						if(isDefined(code.trigger))
+						{
+							if(isDefined(code.trigger.onOff))
+							{
+								imgInd += code.trigger.onOff
+							}
+						}
+						break;
+					}
+				}
+			}
+			drawScaledSquare(CX, sq, x, y, l, t, sqReduc, sqSize, sqOff, imgInd)
+			
+		}
+	}
+
+	CX.fillStyle = 'blue';
+	CX.fillRect(l + (level.player[0] + .3) * sqSize, t + (level.player[1] + .3) * sqSize, sqSize * .4, sqSize * .4);
+}
 	
 function getNameOfObj(obj)
 {

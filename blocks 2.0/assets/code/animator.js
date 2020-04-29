@@ -282,7 +282,7 @@ function drawScaledSquare(CX,sq, x, y, l, t, sqReduc, sqSize, sqOff, imgInd)
 
 	if(isDefined(sq.backInd))
 	{
-		CX.drawImage(squareImg, (sq.backInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+		CX.drawImage(squareQuickImg, (sq.backInd) * squareQuickImg.height + scrn.imgBuffer, scrn.imgBuffer, squareQuickImg.height - 2* scrn.imgBuffer, squareQuickImg.height - 2*scrn.imgBuffer,
 			- .5 * sqSize + sqOff, - .5 * sqSize + sqOff, sqReduc, sqReduc);
 	}
 	if(isDefined(sq.imgRotate) && sq.imgRotate != 'screen')
@@ -291,7 +291,7 @@ function drawScaledSquare(CX,sq, x, y, l, t, sqReduc, sqSize, sqOff, imgInd)
 	}
 	CX.translate((-.5) * sqSize, (-.5) * sqSize);
 	
-	CX.drawImage(squareImg, (imgInd) * squareImg.height + scrn.imgBuffer, scrn.imgBuffer, squareImg.height - 2* scrn.imgBuffer, squareImg.height - 2*scrn.imgBuffer,
+	CX.drawImage(squareQuickImg, (imgInd) * squareQuickImg.height + scrn.imgBuffer, scrn.imgBuffer, squareQuickImg.height - 2* scrn.imgBuffer, squareQuickImg.height - 2*scrn.imgBuffer,
 		sqOff, sqOff, sqReduc, sqReduc);
 	
 	CX.restore();
